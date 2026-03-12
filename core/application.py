@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import time
+import json
 
 from ai_brain.assistant_service import generate_reply
 from ai_brain.code_analysis_agent import summarize_system
@@ -39,6 +40,31 @@ class KonstanceApplication:
             ollama_available=ollama_fallback_available(),
             last_message=int(time.time()),
         )
+        # region agent log
+        try:
+            with (self.config.root / "debug-2cefd0.log").open("a", encoding="utf-8") as fh:
+                fh.write(
+                    json.dumps(
+                        {
+                            "sessionId": "2cefd0",
+                            "runId": "pre-fix",
+                            "hypothesisId": "H4",
+                            "location": "core/application.py:_status_text",
+                            "message": "status_health_snapshot",
+                            "data": {
+                                "relay_available": health.get("relay_available"),
+                                "ollama_available": health.get("ollama_available"),
+                                "restart_count": health.get("restart_count", 0),
+                            },
+                            "timestamp": int(time.time() * 1000),
+                        },
+                        ensure_ascii=True,
+                    )
+                    + "\n"
+                )
+        except Exception:
+            pass
+        # endregion
         return "\n".join(
             [
                 "Status: running",

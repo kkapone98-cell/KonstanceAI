@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import os
 import sys
+import json
+import time
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -86,5 +88,32 @@ def load_config(root: str | Path | None = None) -> AppConfig:
         ollama_model=model,
     )
     config.ensure_runtime_dirs()
+    # region agent log
+    try:
+        with (project_root / "debug-2cefd0.log").open("a", encoding="utf-8") as fh:
+            fh.write(
+                json.dumps(
+                    {
+                        "sessionId": "2cefd0",
+                        "runId": "pre-fix",
+                        "hypothesisId": "H1",
+                        "location": "core/config.py:load_config",
+                        "message": "config_loaded_relay_fields",
+                        "data": {
+                            "has_openclaw_relay_url": bool(config.openclaw_relay_url),
+                            "openclaw_relay_url": config.openclaw_relay_url,
+                            "has_openclaw_cmd": bool(config.openclaw_cmd),
+                            "has_owner": config.has_owner,
+                            "has_token": bool(config.token),
+                        },
+                        "timestamp": int(time.time() * 1000),
+                    },
+                    ensure_ascii=True,
+                )
+                + "\n"
+            )
+    except Exception:
+        pass
+    # endregion
     return config
 

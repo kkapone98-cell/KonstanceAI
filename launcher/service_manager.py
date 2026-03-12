@@ -6,6 +6,7 @@ import os
 import subprocess
 import sys
 import time
+import json
 from pathlib import Path
 from urllib import request as urllib_request
 
@@ -15,6 +16,30 @@ from core.state import RuntimeState
 
 
 CREATE_NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+
+
+def _debug_log(config: AppConfig, run_id: str, hypothesis_id: str, location: str, message: str, data: dict) -> None:
+    # region agent log
+    try:
+        with (config.root / "debug-2cefd0.log").open("a", encoding="utf-8") as fh:
+            fh.write(
+                json.dumps(
+                    {
+                        "sessionId": "2cefd0",
+                        "runId": run_id,
+                        "hypothesisId": hypothesis_id,
+                        "location": location,
+                        "message": message,
+                        "data": data,
+                        "timestamp": int(time.time() * 1000),
+                    },
+                    ensure_ascii=True,
+                )
+                + "\n"
+            )
+    except Exception:
+        pass
+    # endregion
 
 
 def _ollama_available(timeout: int = 3) -> bool:
@@ -59,17 +84,58 @@ def _relay_http_url(config: AppConfig) -> str:
 
 def openclaw_available(config: AppConfig, timeout: int = 5) -> bool:
     url = _relay_http_url(config).rstrip("/")
+    _debug_log(
+        config,
+        run_id="pre-fix",
+        hypothesis_id="H2",
+        location="launcher/service_manager.py:openclaw_available",
+        message="launcher_openclaw_probe_started",
+        data={"url": url, "timeout_sec": timeout},
+    )
     if not url:
+        _debug_log(
+            config,
+            run_id="pre-fix",
+            hypothesis_id="H1",
+            location="launcher/service_manager.py:openclaw_available",
+            message="launcher_openclaw_probe_skipped_empty_url",
+            data={},
+        )
         return False
     try:
         with urllib_request.urlopen(f"{url}/health", timeout=timeout):
+            _debug_log(
+                config,
+                run_id="pre-fix",
+                hypothesis_id="H2",
+                location="launcher/service_manager.py:openclaw_available",
+                message="launcher_openclaw_health_ok",
+                data={"url": f"{url}/health"},
+            )
             return True
-    except Exception:
+    except Exception as exc:
+        _debug_log(
+            config,
+            run_id="pre-fix",
+            hypothesis_id="H2",
+            location="launcher/service_manager.py:openclaw_available",
+            message="launcher_openclaw_health_failed",
+            data={"error_type": type(exc).__name__},
+        )
         return False
 
 
 def ensure_openclaw(config: AppConfig) -> None:
-    if not config.openclaw_cmd or openclaw_available(config):
+    available = openclaw_available(config)
+    _debug_log(
+        config,
+        run_id="pre-fix",
+        hypothesis_id="H3",
+        location="launcher/service_manager.py:ensure_openclaw",
+        message="ensure_openclaw_decision",
+        data={"has_openclaw_cmd": bool(config.openclaw_cmd), "already_available": available},
+    )
+    if not config.openclaw_cmd or available:
         return
     flags = CREATE_NO_WINDOW if sys.platform == "win32" else 0
     subprocess.Popen(

@@ -9,8 +9,8 @@ from urllib.error import HTTPError, URLError
 ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = ROOT / "data"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
-DEBUG_LOG_PATH = ROOT / "debug-57de18.log"
-DEBUG_SESSION_ID = "57de18"
+DEBUG_LOG_PATH = ROOT / "debug-2cefd0.log"
+DEBUG_SESSION_ID = "2cefd0"
 
 
 def _debug_log(run_id: str, hypothesis_id: str, location: str, message: str, data: Dict[str, Any]) -> None:
@@ -92,11 +92,37 @@ def _messages_to_prompt(messages: list[dict[str, str]], system_override: str = "
 
 def relay_available(timeout_sec: int = 5) -> bool:
     url = _relay_http_url().rstrip("/")
+    # region agent log
+    _debug_log(
+        run_id="pre-fix",
+        hypothesis_id="H2",
+        location="scripts/modules/smart_reply_engine.py:relay_available",
+        message="relay_probe_started",
+        data={"url": url, "timeout_sec": timeout_sec, "has_env_url": bool((os.getenv("OPENCLAW_RELAY_URL") or "").strip())},
+    )
+    # endregion
     try:
         with urllib_request.urlopen(f"{url}/health", timeout=timeout_sec):
+            # region agent log
+            _debug_log(
+                run_id="pre-fix",
+                hypothesis_id="H2",
+                location="scripts/modules/smart_reply_engine.py:relay_available",
+                message="relay_health_probe_ok",
+                data={"url": f"{url}/health"},
+            )
+            # endregion
             return True
-    except Exception:
-        pass
+    except Exception as exc:
+        # region agent log
+        _debug_log(
+            run_id="pre-fix",
+            hypothesis_id="H2",
+            location="scripts/modules/smart_reply_engine.py:relay_available",
+            message="relay_health_probe_failed",
+            data={"error_type": type(exc).__name__},
+        )
+        # endregion
     try:
         req = urllib_request.Request(
             url,
@@ -105,8 +131,27 @@ def relay_available(timeout_sec: int = 5) -> bool:
             method="POST",
         )
         with urllib_request.urlopen(req, timeout=timeout_sec) as resp:
-            return 200 <= getattr(resp, "status", 200) < 300
-    except Exception:
+            ok = 200 <= getattr(resp, "status", 200) < 300
+            # region agent log
+            _debug_log(
+                run_id="pre-fix",
+                hypothesis_id="H2",
+                location="scripts/modules/smart_reply_engine.py:relay_available",
+                message="relay_post_probe_finished",
+                data={"status": getattr(resp, "status", 200), "ok": ok},
+            )
+            # endregion
+            return ok
+    except Exception as exc:
+        # region agent log
+        _debug_log(
+            run_id="pre-fix",
+            hypothesis_id="H2",
+            location="scripts/modules/smart_reply_engine.py:relay_available",
+            message="relay_post_probe_failed",
+            data={"error_type": type(exc).__name__},
+        )
+        # endregion
         return False
 
 
