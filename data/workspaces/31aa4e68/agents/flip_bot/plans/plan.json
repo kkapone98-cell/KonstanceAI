@@ -1,0 +1,14 @@
+{
+  "id": "agent_1773270676",
+  "name": "flip_bot",
+  "objective": "Find undervalued items and draft listings with approval gate",
+  "phases": [
+    "research",
+    "plan",
+    "build",
+    "test",
+    "execute"
+  ],
+  "approval_gate": true,
+  "created_at": 1773270676
+}

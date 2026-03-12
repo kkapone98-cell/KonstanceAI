@@ -1,0 +1,47 @@
+[
+  {
+    "ts": 1773192407,
+    "user_id": 8158300788,
+    "goal": "make me a smarter assistant"
+  },
+  {
+    "ts": 1773193759,
+    "user_id": 8158300788,
+    "goal": "test"
+  },
+  {
+    "ts": 1773195321,
+    "user_id": 8158300788,
+    "goal": "accept"
+  },
+  {
+    "ts": 1773195357,
+    "user_id": 8158300788,
+    "goal": "accept and auto-run commands forwarded from Shell with safety checks and rollback"
+  },
+  {
+    "ts": 1773198067,
+    "user_id": 8158300788,
+    "goal": "Do not modify bot.py for now. Only create or update scripts/*.py and agents/*.py. Never rewrite core runtime files."
+  },
+  {
+    "ts": 1773198557,
+    "user_id": 8158300788,
+    "goal": "Primary mode: stable human assistant. Do not modify bot.py unless explicitly told: /core_upgrade."
+  },
+  {
+    "ts": 1773198646,
+    "user_id": 8158300788,
+    "goal": "Primary mode: stable human assistant. Do not modify bot.py unless explicitly told: /core_upgrade."
+  },
+  {
+    "ts": 1773199063,
+    "user_id": 8158300788,
+    "goal": "Emergency stability mode: never modify bot.py. Only modify scripts/.py and agents/.py. If target=bot.py, refuse and tell user to use manual core patch."
+  },
+  {
+    "ts": 1773200244,
+    "user_id": 8158300788,
+    "goal": "Emergency stability mode: never modify bot.py. Only modify scripts/.py and agents/.py. If target=bot.py, refuse and tell user to use manual core patch."
+  }
+]

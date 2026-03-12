@@ -1,0 +1,17 @@
+{
+  "plans": [
+    {
+      "plan_id": "7950ce14",
+      "description": "Self-upgrade smoke test",
+      "requested_by": 8158300788,
+      "intent_name": "self_upgrade_test",
+      "target_hint": null,
+      "validation_required": true,
+      "approval_required": true,
+      "status": "planned",
+      "metadata": {
+        "created_at": 1773346424
+      }
+    }
+  ]
+}

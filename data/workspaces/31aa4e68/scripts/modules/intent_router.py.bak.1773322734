@@ -1,0 +1,61 @@
+"""scripts/modules/intent_router.py — plain language → code action mapper"""
+import json, logging, re
+logger = logging.getLogger(__name__)
+
+INTENT_SYSTEM = """Classify if a message is a request to edit KonstanceAI source code.
+Return ONLY raw JSON (no markdown):
+{"is_code_request":bool,"action":"add_feature|fix_bug|improve|rollback|show_drafts|none","target_hint":"bot.py|scripts/modules/|launcher.py|unknown","description":"one sentence","risk":"high|low|unknown"}
+Risk: bot.py/launcher.py=high, scripts/modules/*=low, unknown=high.
+Examples:
+"add rate limiting" -> {"is_code_request":true,"action":"add_feature","target_hint":"bot.py","description":"Add per-user rate limiting","risk":"high"}
+"what time is it" -> {"is_code_request":false,"action":"none","target_hint":"unknown","description":"","risk":"unknown"}
+"rollback bot.py" -> {"is_code_request":true,"action":"rollback","target_hint":"bot.py","description":"Rollback bot.py to last backup","risk":"high"}"""
+
+_KEYWORDS = [r"\badd\b.*(command|feature|handler|limit|filter)",r"\bfix\b",r"\bimprove\b",r"\brollback\b",r"\bdraft",r"\bpending\b",r"\brate.?limit",r"\bcommand\b.*\/"]
+
+def _keyword_hit(text):
+    lower = text.lower()
+    return any(re.search(p, lower) for p in _KEYWORDS)
+
+def _extract_json(raw):
+    raw = re.sub(r"^```(?:json)?\s*","",raw.strip()); raw = re.sub(r"\s*```$","",raw)
+    try: return json.loads(raw)
+    except Exception:
+        m = re.search(r"\{.*\}", raw, re.DOTALL)
+        if m:
+            try: return json.loads(m.group(0))
+            except: pass
+    return None
+
+def _call_llm(text):
+    msgs = [{"role":"user","content":text}]
+    for fn_name in ["_try_openclaw","_try_ollama"]:
+        try:
+            from scripts.modules.smart_reply_engine import _try_openclaw, _try_ollama
+            fn = _try_openclaw if fn_name == "_try_openclaw" else _try_ollama
+            r = fn(messages=msgs, system_override=INTENT_SYSTEM)
+            if r: return r
+        except Exception as e:
+            logger.debug(f"{fn_name} failed: {e}")
+    return ""
+
+def parse_code_request(text, history=None):
+    lower = text.lower().strip()
+    if len(text) < 5: return {"is_code_request":False,"action":"none","target_hint":"unknown","description":"","risk":"unknown"}
+    if re.search(r"\b(rollback|revert|restore)\b", lower):
+        m = re.search(r"([\w_]+\.py)", lower)
+        t = m.group(1) if m else "unknown"
+        return {"is_code_request":True,"action":"rollback","target_hint":t,"description":f"Rollback {t}","risk":"high"}
+    if re.search(r"\b(draft|pending|approval)\b", lower):
+        return {"is_code_request":True,"action":"show_drafts","target_hint":"unknown","description":"List pending drafts","risk":"low"}
+    if not _keyword_hit(text):
+        return {"is_code_request":False,"action":"none","target_hint":"unknown","description":"","risk":"unknown"}
+    try:
+        raw = _call_llm(text)
+        if raw:
+            p = _extract_json(raw)
+            if p and "is_code_request" in p:
+                return {"is_code_request":bool(p.get("is_code_request")),"action":p.get("action","none"),"target_hint":p.get("target_hint","unknown"),"description":p.get("description",""),"risk":p.get("risk","high")}
+    except Exception as e:
+        logger.warning(f"Intent LLM error: {e}")
+    return {"is_code_request":True,"action":"add_feature","target_hint":"unknown","description":text[:200],"risk":"high"}

@@ -1,0 +1,51 @@
+{
+  "active": [
+    {
+      "id": "g001",
+      "goal": "Safely edit own source code from natural Telegram messages",
+      "priority": "critical",
+      "status": "in_progress",
+      "created_at": 1773322734,
+      "achieved_at": null,
+      "evidence": null
+    },
+    {
+      "id": "g002",
+      "goal": "Maintain full self-awareness: know every file, every command, every capability",
+      "priority": "critical",
+      "status": "in_progress",
+      "created_at": 1773322734,
+      "achieved_at": null,
+      "evidence": null
+    },
+    {
+      "id": "g003",
+      "goal": "Build financial monitoring \u2014 price alerts, opportunity triggers",
+      "priority": "high",
+      "status": "pending",
+      "created_at": 1773322734,
+      "achieved_at": null,
+      "evidence": null
+    },
+    {
+      "id": "g004",
+      "goal": "Add web search capability so Konstance can research tasks autonomously",
+      "priority": "high",
+      "status": "pending",
+      "created_at": 1773322734,
+      "achieved_at": null,
+      "evidence": null
+    },
+    {
+      "id": "g005",
+      "goal": "Build scheduled task system \u2014 Konstance acts on a schedule without Xavier prompting",
+      "priority": "medium",
+      "status": "pending",
+      "created_at": 1773322734,
+      "achieved_at": null,
+      "evidence": null
+    }
+  ],
+  "achieved": [],
+  "version": 1
+}

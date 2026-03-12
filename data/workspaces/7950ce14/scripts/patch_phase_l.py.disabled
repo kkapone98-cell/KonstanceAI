@@ -1,0 +1,173 @@
+﻿from pathlib import Path
+import shutil, time
+
+ROOT = Path(r"C:\Users\Thinkpad\Desktop\KonstanceAI")
+BOT = ROOT / "bot.py"
+BACKUP = ROOT / "backups" / f"bot_pre_l_{int(time.time())}.py"
+
+src = BOT.read_text(encoding="utf-8")
+shutil.copyfile(BOT, BACKUP)
+
+# 1) Force UTF-8 console behavior for this process
+if "os.environ.setdefault(\"PYTHONUTF8\", \"1\")" not in src:
+    src = src.replace("import os, json, time, pathlib, shutil, subprocess", "import os, json, time, pathlib, shutil, subprocess\nos.environ.setdefault(\"PYTHONUTF8\", \"1\")")
+
+# 2) Add helper: split long messages safely
+helper = '''
+
+def _chunk_text(text: str, limit: int = 3500):
+    t = text or ""
+    if len(t) <= limit:
+        return [t]
+    out = []
+    while t:
+        if len(t) <= limit:
+            out.append(t)
+            break
+        cut = t.rfind("\n", 0, limit)
+        if cut <= 0:
+            cut = limit
+        out.append(t[:cut])
+        t = t[cut:].lstrip("\n")
+    return out
+
+
+async def safe_reply(update: Update, text: str):
+    for part in _chunk_text(text, 3500):
+        await update.message.reply_text(part)
+'''
+
+if "def _chunk_text(" not in src:
+    anchor = "def style(text, prefs):"
+    idx = src.find(anchor)
+    if idx != -1:
+        src = src[:idx] + helper + "\n" + src[idx:]
+    else:
+        src += helper
+
+# 3) Replace direct reply_text(msg) for heavy commands with safe_reply where obvious
+src = src.replace("await update.message.reply_text(msg)", "await safe_reply(update, msg)")
+src = src.replace("await update.message.reply_text(msg if msg else \"No scripts yet.\")", "await safe_reply(update, msg if msg else \"No scripts yet.\")")
+src = src.replace("await update.message.reply_text(msg if msg else \"No agents yet.\")", "await safe_reply(update, msg if msg else \"No agents yet.\")")
+
+# 4) Add /brief command
+brief_handler = '''
+
+async def brief_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # owner-only brief because it may reveal operational details
+    if not owner_required(update, "approve_latest"):
+        await update.message.reply_text("Not authorized for this action.")
+        return
+
+    tasks_db = loadj(TASKS, {"tasks": []})
+    jobs_db = loadj(DATA / "jobs.json", {"jobs": []})
+    mission = loadj(MISSION, {}) if 'MISSION' in globals() else {}
+
+    open_tasks = [x for x in tasks_db.get("tasks", []) if x.get("status") == "open"]
+    recent_jobs = jobs_db.get("jobs", [])[-10:]
+    q = [j for j in recent_jobs if j.get("status") in ["queued", "pending_approval"]]
+    f = [j for j in recent_jobs if j.get("status") == "failed"]
+    c = [j for j in recent_jobs if j.get("status") == "completed"]
+
+    lines = []
+    lines.append("Daily Brief")
+    lines.append(f"- Open tasks: {len(open_tasks)}")
+    lines.append(f"- Jobs (recent): completed={len(c)} queued/pending={len(q)} failed={len(f)}")
+
+    if mission:
+        lines.append(f"- Northstar: {mission.get('primary_goal','(not set)')}")
+
+    if open_tasks:
+        lines.append("Top tasks:")
+        for t in open_tasks[:5]:
+            lines.append(f"  • {t.get('text')}")
+
+    if f:
+        lines.append("Recent failures:")
+        for j in f[-3:]:
+            lines.append(f"  • {j.get('id')} {j.get('action')}: {str(j.get('result',''))[:120]}")
+
+    lines.append("Next actions:")
+    if q:
+        lines.append("  • Review and approve pending jobs")
+    else:
+        lines.append("  • Queue one high-ROI goal with /goal <objective>")
+    lines.append("  • Run /self_audit weekly to verify capability health")
+
+    await safe_reply(update, "\n".join(lines))
+'''
+
+if "async def brief_cmd(update: Update" not in src:
+    anchor = "async def self_audit_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):"
+    if anchor in src:
+        src = src.replace(anchor, brief_handler + "\n" + anchor)
+    else:
+        src += brief_handler
+
+if 'CommandHandler("brief",brief_cmd)' not in src:
+    reg_anchor = 'app.add_handler(CommandHandler("self_audit",self_audit_cmd))'
+    if reg_anchor in src:
+        src = src.replace(reg_anchor, reg_anchor + '\n    app.add_handler(CommandHandler("brief",brief_cmd))')
+
+# 5) Add quick traceback helper command
+trace_handler = '''
+
+async def tracehelp_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    args = context.args or []
+    text = " ".join(args).strip()
+    if not text:
+        await update.message.reply_text("Usage: /tracehelp <paste key traceback line>")
+        return
+
+    tips = []
+    t = text.lower()
+    if "unicodeencodeerror" in t or "cp1252" in t:
+        tips.append("Set PYTHONUTF8=1 and remove emoji from console prints.")
+    if "indentationerror" in t:
+        tips.append("File indentation is broken; rewrite the file from a clean template.")
+    if "jsondecodeerror" in t and "bom" in t:
+        tips.append("Read JSON with utf-8-sig and rewrite files without BOM.")
+    if "commandhandler" in t and "unexpected token" in t:
+        tips.append("You ran Python code in PowerShell. Edit bot.py in a file, don’t execute that line in shell.")
+    if not tips:
+        tips.append("Capture full traceback + file + line and run compile gate: python -m py_compile <file>")
+
+    await safe_reply(update, "Trace Help:\n- " + "\n- ".join(tips))
+'''
+
+if "async def tracehelp_cmd(update: Update" not in src:
+    anchor = "async def brief_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):"
+    if anchor in src:
+        src = src.replace(anchor, trace_handler + "\n" + anchor)
+    else:
+        src += trace_handler
+
+if 'CommandHandler("tracehelp",tracehelp_cmd)' not in src:
+    reg_anchor = 'app.add_handler(CommandHandler("brief",brief_cmd))'
+    if reg_anchor in src:
+        src = src.replace(reg_anchor, reg_anchor + '\n    app.add_handler(CommandHandler("tracehelp",tracehelp_cmd))')
+
+# Natural language hook for brief
+if 'if n in ["brief", "daily brief", "status brief"]:' not in src:
+    nl_anchor = '    # smart routed chat\n'
+    nl_block = '''    if n in ["brief", "daily brief", "status brief"]:
+        if not owner_required(update, "approve_latest"):
+            await update.message.reply_text("Not authorized for this action.")
+            return
+        tasks_db = loadj(TASKS, {"tasks": []})
+        jobs_db = loadj(DATA / "jobs.json", {"jobs": []})
+        open_tasks = [x for x in tasks_db.get("tasks", []) if x.get("status") == "open"]
+        recent_jobs = jobs_db.get("jobs", [])[-10:]
+        q = [j for j in recent_jobs if j.get("status") in ["queued", "pending_approval"]]
+        f = [j for j in recent_jobs if j.get("status") == "failed"]
+        c = [j for j in recent_jobs if j.get("status") == "completed"]
+        lines = ["Daily Brief", f"- Open tasks: {len(open_tasks)}", f"- Jobs: completed={len(c)} queued/pending={len(q)} failed={len(f)}"]
+        await safe_reply(update, "\\n".join(lines))
+        return
+
+'''
+    if nl_anchor in src:
+        src = src.replace(nl_anchor, nl_block + nl_anchor)
+
+BOT.write_text(src, encoding="utf-8")
+print(f"Phase L patch applied. Backup: {BACKUP}")

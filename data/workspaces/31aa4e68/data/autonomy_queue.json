@@ -1,0 +1,80 @@
+{
+  "items": [
+    {
+      "id": "auto_1773270676",
+      "kind": "improve",
+      "payload": "improve flip pipeline scoring",
+      "status": "completed",
+      "ts": 1773270676,
+      "completed_at": 1773252775,
+      "result": "Processed improve => improve flip pipeline scoring"
+    },
+    {
+      "id": "auto_1773270982",
+      "kind": "improve",
+      "payload": "improve flip pipeline scoring and listing quality",
+      "status": "completed",
+      "ts": 1773270982,
+      "completed_at": 1773252983,
+      "result": "Processed improve => improve flip pipeline scoring and listing quality"
+    },
+    {
+      "id": "auto_1773271142",
+      "kind": "improve",
+      "payload": "improve title quality and pricing logic",
+      "status": "completed",
+      "ts": 1773271142,
+      "completed_at": 1773271142,
+      "result": "proposal created; apply pending/manual: no targets"
+    },
+    {
+      "id": "auto_1773274924",
+      "kind": "improve",
+      "payload": "improve flip scoring for fast turnover",
+      "status": "completed",
+      "requested_by": "8158300788",
+      "ts": 1773274924,
+      "completed_at": 1773275046,
+      "result": "proposal created; apply pending/manual: no targets"
+    },
+    {
+      "id": "auto_1773276801",
+      "kind": "improve",
+      "payload": "improve flip scoring for fast turnover and better margin quality",
+      "status": "completed",
+      "ts": 1773276801,
+      "completed_at": 1773276846,
+      "result": "proposal created; apply pending/manual: no targets"
+    },
+    {
+      "id": "auto_1773277042",
+      "kind": "improve",
+      "payload": "improve yourself to prioritize fast cash flips",
+      "status": "completed",
+      "requested_by": "8158300788",
+      "ts": 1773277042,
+      "completed_at": 1773277042,
+      "result": "proposal created; apply pending/manual: no targets"
+    },
+    {
+      "id": "auto_1773277275",
+      "kind": "improve",
+      "payload": "improve yourself to prioritize fast cash flips",
+      "status": "completed",
+      "requested_by": "8158300788",
+      "ts": 1773277275,
+      "completed_at": 1773277278,
+      "result": "proposal created; apply pending/manual: no targets"
+    },
+    {
+      "id": "auto_1773310078",
+      "kind": "improve",
+      "payload": "Please change your name to KrackPack",
+      "status": "completed",
+      "requested_by": "8117558345",
+      "ts": 1773310078,
+      "completed_at": 1773329925,
+      "result": "proposal created; apply pending/manual: no targets"
+    }
+  ]
+}

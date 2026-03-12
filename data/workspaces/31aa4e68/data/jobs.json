@@ -1,0 +1,114 @@
+{
+  "jobs": [
+    {
+      "id": "job_1773266788",
+      "created_at": 1773266788,
+      "action": "write_note",
+      "payload": "phase-j test note",
+      "requested_by": "",
+      "tier": "auto_allow",
+      "status": "completed",
+      "result": "Note written",
+      "completed_at": 1773266788
+    },
+    {
+      "id": "job_1773266802",
+      "created_at": 1773266802,
+      "action": "create_script",
+      "payload": "helloj hello from phase j",
+      "requested_by": "",
+      "tier": "auto_allow",
+      "status": "failed",
+      "result": "Payload format: <name>|<purpose>",
+      "completed_at": 1773266802
+    },
+    {
+      "id": "job_1773266808",
+      "created_at": 1773266808,
+      "action": "run_script",
+      "payload": "helloj input-from-telegram",
+      "requested_by": "",
+      "tier": "auto_allow",
+      "status": "failed",
+      "result": "Payload format: <name>|<input>",
+      "completed_at": 1773266808
+    },
+    {
+      "id": "job_1773266862",
+      "created_at": 1773266862,
+      "action": "create_script",
+      "payload": "helloj|hello from phase j",
+      "requested_by": "",
+      "tier": "auto_allow",
+      "status": "completed",
+      "result": "Created: helloj.py",
+      "completed_at": 1773266862
+    },
+    {
+      "id": "job_1773267038",
+      "created_at": 1773267038,
+      "action": "create_script",
+      "payload": "testscript|print test",
+      "requested_by": "",
+      "tier": "auto_allow",
+      "status": "completed",
+      "result": "Created: testscript.py",
+      "completed_at": 1773267038
+    },
+    {
+      "id": "job_1773267043",
+      "created_at": 1773267043,
+      "action": "run_script",
+      "payload": "testscript|hello",
+      "requested_by": "",
+      "tier": "auto_allow",
+      "status": "completed",
+      "result": "Run ok OK Log: script-testscript-1773267043.log\n[testscript] running at 2026-03-11T17:10:43.467269\ninput: hello\nTODO: implement script logic",
+      "completed_at": 1773267043
+    },
+    {
+      "id": "job_1773267191",
+      "created_at": 1773267191,
+      "action": "create_agent",
+      "payload": "scout|Research opportunities for: Build a Craigslist-to-eBay flip workflow",
+      "requested_by": "autoplan",
+      "tier": "auto_allow",
+      "status": "failed",
+      "result": "Agent already exists",
+      "completed_at": 1773330425
+    },
+    {
+      "id": "job_1773267191",
+      "created_at": 1773267191,
+      "action": "create_script",
+      "payload": "starter|Starter script for: Build a Craigslist-to-eBay flip workflow",
+      "requested_by": "autoplan",
+      "tier": "auto_allow",
+      "status": "failed",
+      "result": "Script already exists: starter.py",
+      "completed_at": 1773330425
+    },
+    {
+      "id": "job_1773267191",
+      "created_at": 1773267191,
+      "action": "run_agent",
+      "payload": "scout|Find 5 actionable ideas for: Build a Craigslist-to-eBay flip workflow",
+      "requested_by": "autoplan",
+      "tier": "auto_allow",
+      "status": "failed",
+      "result": "Run failed: timed out",
+      "completed_at": 1773330546
+    },
+    {
+      "id": "job_1773267192",
+      "created_at": 1773267192,
+      "action": "run_script",
+      "payload": "starter|first run for: Build a Craigslist-to-eBay flip workflow",
+      "requested_by": "autoplan",
+      "tier": "auto_allow",
+      "status": "failed",
+      "result": "Script not found: starter",
+      "completed_at": 1773330546
+    }
+  ]
+}

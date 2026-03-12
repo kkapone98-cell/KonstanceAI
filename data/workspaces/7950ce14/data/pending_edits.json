@@ -1,0 +1,61 @@
+{
+  "pending": [],
+  "approved": [
+    {
+      "id": "draft_1773262927",
+      "request": "be short and direct",
+      "status": "approved",
+      "created_at": 1773262927,
+      "applied": [
+        "verbosity=short",
+        "tone=direct"
+      ]
+    },
+    {
+      "id": "draft_1773263275",
+      "request": "Be more direct and short",
+      "status": "approved",
+      "created_at": 1773263275,
+      "author": "8158300788",
+      "approved_at": 1773263283,
+      "applied": [
+        "verbosity=short",
+        "tone=direct"
+      ],
+      "backup": "C:\\Users\\Thinkpad\\Desktop\\KonstanceAI\\backups\\prefs_1773263283.json"
+    },
+    {
+      "id": "draft_1773263664",
+      "request": "Be more direct and short",
+      "status": "approved",
+      "created_at": 1773263664,
+      "author": "8158300788",
+      "approved_at": 1773263667,
+      "applied": [
+        "verbosity=short",
+        "tone=direct"
+      ],
+      "backup": {
+        "prefs": "C:\\Users\\Thinkpad\\Desktop\\KonstanceAI\\backups\\prefs_1773263667.json",
+        "profile": "C:\\Users\\Thinkpad\\Desktop\\KonstanceAI\\backups\\profile_1773263667.json"
+      }
+    },
+    {
+      "id": "draft_1773263895",
+      "request": "Be more direct and short",
+      "status": "approved",
+      "created_at": 1773263895,
+      "author": "8158300788",
+      "approved_at": 1773263900,
+      "applied": [
+        "verbosity=short",
+        "tone=direct"
+      ],
+      "backup": {
+        "prefs": "C:\\Users\\Thinkpad\\Desktop\\KonstanceAI\\backups\\prefs_1773263900.json",
+        "profile": "C:\\Users\\Thinkpad\\Desktop\\KonstanceAI\\backups\\profile_1773263900.json"
+      }
+    }
+  ],
+  "rejected": []
+}

@@ -1,0 +1,1 @@
+{"auto_allow":["create_script","run_script","create_agent","run_agent","write_note"],"confirm_required":["write_file","shell_exec","edit_core"],"deny":["delete_path","format_disk","credential_dump"]}

@@ -1,0 +1,38 @@
+﻿from pathlib import Path
+
+p = Path(r"C:\Users\Thinkpad\Desktop\KonstanceAI\bot.py")
+s = p.read_text(encoding="utf-8")
+
+block = """
+if n.startswith("create agent "):
+raw = text[len("create agent "):].strip()
+if "|" not in raw:
+await update.message.reply_text("Format: create agent <name> | <purpose>")
+return
+name, purpose = [x.strip() for x in raw.split("|", 1)]
+code, msg = create_agent(name, purpose)
+await update.message.reply_text(msg)
+return
+
+if n.startswith("run agent "):
+raw = text[len("run agent "):].strip()
+if "|" not in raw:
+await update.message.reply_text("Format: run agent <name> | <task>")
+return
+name, task = [x.strip() for x in raw.split("|", 1)]
+code, msg = run_agent(name, task)
+await update.message.reply_text(msg)
+return
+
+if n in ["agents", "list agents", "show agents"]:
+code, msg = list_agents()
+await update.message.reply_text(msg if msg else "No agents yet.")
+return
+"""
+
+needle = " # smart routed chat"
+if block not in s and needle in s:
+s = s.replace(needle, block + "\n" + needle)
+
+p.write_text(s, encoding="utf-8")
+print("patched")

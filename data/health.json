@@ -1,10 +1,12 @@
 {
-  "last_start": 1773340420,
-  "last_message": 1773340488,
+  "last_start": 1773346509,
+  "last_message": 1773346566,
   "llm_ok": false,
   "cloud_ok": false,
   "errors": 7,
-  "relay_available": false,
+  "relay_available": true,
   "ollama_available": true,
-  "updated_at": 1773340488
+  "updated_at": 1773346566,
+  "restart_count": 6,
+  "quarantined": true
 }

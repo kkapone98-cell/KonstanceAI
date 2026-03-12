@@ -1,0 +1,79 @@
+"""scripts/modules/code_editor.py — KonstanceAI safe edit engine"""
+import os, shutil, time, py_compile, tempfile, glob
+from pathlib import Path
+
+HIGH_RISK = {"bot.py", "launcher.py", "main.py"}
+
+def risk_level(path):
+    name = Path(path).name
+    if name in HIGH_RISK: return "high"
+    if "scripts" in Path(path).parts: return "low"
+    return "high"
+
+def backup_file(path):
+    path = Path(path)
+    if not path.exists(): raise FileNotFoundError(f"Not found: {path}")
+    bak = Path(f"{path}.bak.{int(time.time())}")
+    shutil.copy2(path, bak)
+    return bak
+
+def list_backups(path):
+    return sorted([Path(b) for b in glob.glob(str(path) + ".bak.*")], reverse=True)
+
+def compile_check(path):
+    try:
+        py_compile.compile(str(path), doraise=True)
+        return (True, "")
+    except py_compile.PyCompileError as e:
+        return (False, str(e))
+
+def compile_check_string(code):
+    tmp = None
+    try:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False, encoding="utf-8") as f:
+            f.write(code); tmp = f.name
+        return compile_check(Path(tmp))
+    finally:
+        if tmp and os.path.exists(tmp): os.unlink(tmp)
+
+def apply_patch(path, new_content):
+    path = Path(path)
+    result = {"success": False, "backup_path": None, "error": None, "stage": "init"}
+    result["stage"] = "pre_compile"
+    ok, err = compile_check_string(new_content)
+    if not ok:
+        result["error"] = f"Pre-compile failed: {err}"; return result
+    result["stage"] = "backup"
+    try:
+        if path.exists():
+            bak = backup_file(path); result["backup_path"] = str(bak)
+    except Exception as e:
+        result["error"] = f"Backup failed: {e}"; return result
+    result["stage"] = "write"
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(new_content, encoding="utf-8")
+    except Exception as e:
+        result["error"] = f"Write failed: {e}"
+        if result["backup_path"]: shutil.copy2(result["backup_path"], path)
+        return result
+    result["stage"] = "post_compile"
+    ok, err = compile_check(path)
+    if not ok:
+        result["error"] = f"Post-compile failed: {err}"
+        if result["backup_path"]:
+            shutil.copy2(result["backup_path"], path)
+            result["error"] += " — rolled back."
+        return result
+    result["success"] = True; result["stage"] = "done"
+    return result
+
+def rollback(path):
+    path = Path(path)
+    backups = list_backups(path)
+    if not backups: return {"success": False, "restored_from": None, "error": f"No backups for {path.name}"}
+    try:
+        shutil.copy2(backups[0], path)
+        return {"success": True, "restored_from": str(backups[0]), "error": None}
+    except Exception as e:
+        return {"success": False, "restored_from": None, "error": str(e)}

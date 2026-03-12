@@ -1,0 +1,12 @@
+{
+  "last_start": 1773345437,
+  "last_message": 1773346455,
+  "llm_ok": false,
+  "cloud_ok": false,
+  "errors": 7,
+  "relay_available": true,
+  "ollama_available": true,
+  "updated_at": 1773346455,
+  "restart_count": 6,
+  "quarantined": true
+}

@@ -1,0 +1,9 @@
+{
+  "ts": 1773270676,
+  "bot": true,
+  "jobs": true,
+  "tasks": true,
+  "money": true,
+  "router": true,
+  "policy": true
+}

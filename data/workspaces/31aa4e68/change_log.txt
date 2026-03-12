@@ -1,0 +1,36 @@
+2026-03-12 - AI Fix Pass (production stabilization)
+
+1) Replaced broken bot runtime:
+- Rewrote bot.py into a complete, runnable Telegram poller using python-telegram-bot.
+- Removed imports to missing scripts/modules that caused startup crash.
+- Added command handlers: /start /status /health /cloudtest /setverbosity.
+- Added text message handler routed through SmartReplyEngine.
+
+2) Removed hardcoded Windows paths:
+- Replaced C:\Users\Thinkpad\Desktop\KonstanceAI with project-relative root.
+- Supports KONSTANCE_ROOT override via environment variable.
+
+3) Added reliable SmartReplyEngine:
+- New scripts/modules/smart_reply_engine.py.
+- OpenClaw relay URL normalization (ws/wss -> http/https).
+- Cloud generation with token auth support.
+- Ollama local fallback using data/llm.json.
+- Safe formatting and fallback echo path.
+
+4) Added single-instance protection:
+- bot lock file with non-blocking lock (Windows + Unix handling).
+- Exit code 11 used to indicate duplicate instance.
+
+5) Rewrote launcher.py for stable supervision:
+- Starts bot.py from project root.
+- Handles missing token fail-fast.
+- Backoff restart loop.
+- Special handling for lock conflict (11).
+
+6) Added minimal tests:
+- tests/test_smart_reply_engine.py
+- tests/test_bot_config.py
+- Verified all tests pass via unittest.
+
+7) Added audit report:
+- konstance_analysis_report.md with root cause, priority table, fix summary, setup guide, and test checklist.

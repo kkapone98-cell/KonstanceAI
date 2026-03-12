@@ -1,0 +1,31 @@
+﻿from pathlib import Path
+p = Path(r"C:\Users\Thinkpad\Desktop\KonstanceAI\bot.py")
+s = p.read_text(encoding="utf-8", errors="ignore")
+
+# hard-fix broken chunk line
+s = s.replace('cut = t.rfind("', 'cut = t.rfind("\\n", 0, limit) # fixed')
+
+# if weird split happened, normalize whole _chunk_text function
+if "def _chunk_text" in s:
+import re
+pattern = r"def _chunk_text\(.*?return out\\n"
+repl = '''def _chunk_text(text: str, limit: int = 3500):
+t = text or ""
+if len(t) <= limit:
+return [t]
+out = []
+while t:
+if len(t) <= limit:
+out.append(t)
+break
+cut = t.rfind("\\n", 0, limit)
+if cut <= 0:
+cut = limit
+out.append(t[:cut])
+t = t[cut:].lstrip("\\n")
+return out
+'''
+s = re.sub(pattern, repl, s, flags=re.S)
+
+p.write_text(s, encoding="utf-8")
+print("patched bot.py")

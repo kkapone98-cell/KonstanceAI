@@ -1,0 +1,58 @@
+{
+  "8158300788-1773196186": {
+    "user_id": 8158300788,
+    "target": "bot.py",
+    "content": "import telebot\nfrom telebot import types\nfrom db import DataBase\n\ndb = DataBase('path_to_your_database.db')\nbot = telebot.TeleBot('YOUR_BOT_TOKEN')\n\nadmins = db.get_admins()\n\n@bot.message_handler(commands=['runblock'])\ndef runblock(message):\n    if message.from_user.id not in admins:\n        bot.reply_to(message, 'This command is admin-only.')\n        return\n\n    rkb_menu = types.InlineKeyboardMarkup()\n    rkb_menu.add(types.InlineKeyboardButton('Draft', callback_data='runblock_draft'))\n\n    bot.send_message(message.chat.id, 'Please select an option:\\nDraft', reply_markup=rkb_menu)\n\n@bot.callback_query_handler(func=lambda call: call.data == 'runblock_draft')\ndef runblock_draft(call):\n    if call.message:\n        bot.send_message(call.message.chat.id, 'Enter the text for the block.')\n        bot.register_next_step_handler(call.message, runblock_apply)\n\ndef runblock_apply(message):\n    block_text = message.text\n    db.run_block(block_text)\n    bot.send_message(message.chat.id, 'Block has been drafted successfully.')\n\n@bot.message_handler(commands=['runblock_apply'])\ndef runblock_apply(message):\n    if message.from_user.id not in admins:\n        bot.reply_to(message, 'This command is admin-only.')\n        return\n\n    blocks = db.get_blocks()\n    block_menu = types.ReplyKeyboardMarkup(resize_keyboard=True)\n    for block in blocks:\n        block_menu.add(block['text'])\n\n    bot.send_message(message.chat.id, 'Choose a block to apply.', reply_markup=block_menu)\n\nbot.polling()",
+    "note": "improve goal: add /runblock and /runblock_apply admin-only with draft/apply flow",
+    "created_at": 1773196186
+  },
+  "8158300788-1773196887": {
+    "user_id": 8158300788,
+    "target": "scripts/watchdog.py",
+    "content": "import time\n\nimport logging\n\nimport subprocess\n\nimport requests\n\n\nlogging.basicConfig(filename='logs/watchdog.log', level=logging endpoints, health_endpoint_url='http://ollama-service:11434/health')\n\n\ndef check_bot_process():\n\n    try:\n\n        result = subprocess.run(['pgrep', 'bot_process_name'], stdout=subprocess.PIPE, check=True)\n\n        return result.returncode == 0\n\n    except subprocess.CalledProcessError:\n\n        return False\n\n\ndef check_ollama_health():\n\n    response = requests.get(ollama_health_endpoint_url)\n\n    return response.status_code == 200\n\n\ndef restart_bot_process():\n\n    subprocess.run(['pgrep', 'bot_process_name'])\n\n\nwhile True:",
+    "note": "improve goal: create a watchdog loop that every 30s checks bot process and ollama health endpoint, writes status to logs/watchdog.log, and restarts bot process if down",
+    "created_at": 1773196887
+  },
+  "8158300788-1773197643": {
+    "user_id": 8158300788,
+    "target": "bot.py",
+    "content": "from telegram import Bot, Update\nfrom telegram.ext import CommandHandler, MessageHandler, FilenameChatAction, CallbackContext\nimport os\n\nTOKEN = 'YOUR_TELEGRAM_BOT_TOKEN'\nbot = Bot(token=TOKEN)\nupdater = Updater(bot, use_context=True)\n\ndef build_draft(update: Update, context: CallbackContext):\n    draft_id = update.effective_chat.id\n    draft_text = 'import os\\noos.system(\"python build.py\")\\n'\n    update.message.reply_text('Draft created with ID: ' + draft_id)\n    draft = bot.send_message(chat_id=update.effective_chat.id, text=draft_text, reply_to_message_id=update.message.message_id, parse_mode=FilenameChatAction.TEXT",
+    "note": "improve goal: Make /build execution-mode strict: when command starts with /build, generate ONLY runnable Python code (no prose, no markdown, no pseudo-code), save as draft, and return draft id. Reject outputs containing words like \"pseudo\", \"example\", or triple backticks. If invalid output, retry generation once with stricter prompt.",
+    "created_at": 1773197643
+  },
+  "8158300788-1773197858": {
+    "user_id": 8158300788,
+    "target": "bot.py",
+    "content": "import asyncio\nfrom telegram import Bot, ParseMode, FilenameChatAction\nfrom telegram.ext import ApplicationBuilder, Application, Updater, Dispatcher, Message\nfrom telegram.error import TelegramError\n\n# Fallback sanitizer function\ndef sanitize_code(code, banned_patterns=(\"bot.send_message(\", \"FilenameChatAction\", \"parse_mode=Filename\")):\n    if any(pattern in code for pattern in banned_patterns):\n        return False\n    if code.count(\"(\") != code.count(\")\"):\n        return False\n    return True\n\nasync def handle_build(update: Update, context: CallbackContext):\n    code = update.message.text\n    if not sanitize_code(code):\n        update.message.reply_text(\"Code contains unmatched parentheses or banned patterns. Please try again without them.\")\n        return\n\n    try",
+    "note": "improve goal: Fix /build code generation quality: enforce python-telegram-bot v21 async style only (ApplicationBuilder, async def, await update.message.reply_text). Never output bot.send_message or parse_mode enums unless imported correctly. Add fallback sanitizer that rejects draft if code contains unmatched parentheses or banned patterns: \"bot.send_message(\", \"FilenameChatAction\", \"parse_mode=Filename\". If rejected, retry once with stricter prompt and return \"retry_used=true\" in note.",
+    "created_at": 1773197858
+  },
+  "8158300788-1773198712": {
+    "user_id": 8158300788,
+    "target": "scripts/profit_tools.py",
+    "content": "def margin_pct(cost, sell, fees=0):\n\n    \"\"\"\n\n    Calculate the profit margin percentage.\n\n\n    Parameters:\n\n    cost (float): The cost price of the item.\n\n    sell (float): The selling price of the item.\n\n    fees (float, optional): The fees paid to the intermediary (default is 0).\n\n\n    Returns:\n\n    float: The profit margin percentage.\n\n    \"\"\"\n\n    if cost < 0 or sell < threshold:\n\n        raise ValueError(\"Cost and sell price must be non-negative.\")\n\n    if sell < cost:\n\n        raise ValueError(\"Selling price must be higher than cost price.\")\n\n    \n    sell_after_fees = sell - fees\n\n    margin = sell_after_fees - cost\n\n    return (margin / cost) * 100 if cost != 0 else",
+    "note": "improve goal: create functions margin_pct(cost,sell,fees=0) and roi_pct(cost,profit) with docstrings and input validation. return only python code.",
+    "created_at": 1773198712
+  },
+  "8158300788-1773198820": {
+    "user_id": 8158300788,
+    "target": "bot.py",
+    "content": "from telegram import Bot, Update\nfrom telegram.ext import CommandHandler, CallbackContext\nfrom telegram.error import BadRequest\n\n# Assuming 'bot' is a Bot instance and 'admin_id' is the admin's user ID\nbot = Bot(token='YOUR_BOT_TOKEN')\nadmin_id = 'ADMIN_USER_ID'\n\ndef approve_latest(update: Update, context: CallbackContext) -> str:\n    if update.message.from_user.id != admin_id:\n        return \"You are not authorized to use this command.\"\n\n    try:\ndeleted_drafts = bot.get_pending_drafts()\n    except BadRequest as e:\n        return \"Failed to fetch drafts: {}\".format(e.message)\n\n    if not deleted_drafts:\n        return \"No pending drafts to approve.\"\n\n    latest_draft = max",
+    "note": "improve goal: add command /approve_latest admin-only: find newest pending draft by created_at for that admin user and apply it. keep existing safety checks. return short status text only.",
+    "created_at": 1773198820
+  },
+  "8158300788-1773198960": {
+    "user_id": 8158300788,
+    "target": "bot.py",
+    "content": "import telegram.ext\n\ndef handle(update, context):\n    message = update.message\n    user_id = message.from_user.id\n    uid = message.chat.id\n\n    if user_id not in ADMIN_USERS:\n        update.message.reply_text(\"You are not authorized to use this command.\")\n        return\n\n    drafts = get_pending_drafts(uid)\n    if not drafts:\n hall_of_fame.append(user_id)\n        update.message.reply_text(\"No drafts to approve.\")\n        return\n\n    latest_draft = max(drafts, key=lambda x: x['created_at'])\n    applydraft(user_id, latest_draft['did'])\n    update.message.reply_text(f\"Approved draft {latestin_draft['did']} created at {latest_d",
+    "note": "improve goal: return full valid python file only. add admin-only command /approve_latest that selects newest pending draft for the admin user by created_at and applies it using existing applydraft(uid,did). no other changes. 4-space indentation only, no tabs, no markdown, no commentary.",
+    "created_at": 1773198960
+  },
+  "8158300788-1773200574": {
+    "user_id": 8158300788,
+    "target": "bot.py",
+    "content": "import subprocess\n\nimport shlex\n\nimport re\n\nfrom telegram import Bot, Update\n\nfrom telegram.ext import CommandHandler, FilenameCallback\n\n\nTOKEN = 'YOUR_TELEGRAM_BOT_TOKEN'\n\nbot = Bot(token=TOKEN)\n\n\nALLOWLIST = {'openclaw', 'python', 'pip', 'ollama', 'dir', 'type', 'findstr'}\n\n\ndef check_backup_and_compile(update: Update, context: CallbackContext):\n\n    filename = update.effective_message.text.split()[0]\n\n    if filename not in ALLOWLIST:\n\n        update.effective_message.reply_text(\"This command is not allowed.\")\n\n        return\n\n    if not context.args:\n\n        update.effective_message.reply_text(\"No arguments provided for the command.\")\n\n        return",
+    "note": "improve goal: Add strict command router for admin-only messages: if text starts with !exec then run shell command with subprocess (timeout 30s) and return stdout/stderr only; if text starts with !openclaw then execute exact openclaw CLI command and return result; otherwise keep normal chat behavior. Never explain command meaning when prefix is !exec or !openclaw. Add allowlist: openclaw, python, pip, ollama, dir, type, findstr. Keep backup + py_compile check before applying.",
+    "created_at": 1773200574
+  }
+}

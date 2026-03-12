@@ -1,0 +1,317 @@
+KONSTANCE AI
+Complete Session Recap  �  Build Log  �  Cursor AI Prompt
+Generated March 12, 2026  �  Owner: Xavier
+
+UPDATE � Latest hardening pass (applied)
+========================================
+
+1) Natural-language approval enabled (no command required)
+- If a high-risk draft is staged, Xavier can now reply:
+  "yes", "approve", "go ahead", "apply", etc.
+- Konstance applies the pending draft for owner automatically.
+- Explicit "approve <draft_id>" in plain text also works.
+
+2) Natural-language transparency improved
+- Konstance now reports what it is doing in flow messages:
+  detect intent -> generate -> compile check -> stage/apply.
+- Natural "show drafts" intent now returns pending drafts list.
+
+3) Relay/model resilience improved
+- OpenClaw relay URL defaults to ws://127.0.0.1:18789 if unset.
+- OpenClaw request now retries once before fallback.
+- If relay + Ollama fail, fallback reply explains outage and next action.
+
+4) Memory and persistence
+- Persistent chat memory remains enabled in data/memory.json.
+- Retention set to last 30 exchanges.
+
+5) One-click restart shortcut added
+- New file: START_KONSTANCE.cmd
+- Starts scripts/start-all.ps1 which now:
+  - auto-resolves project root dynamically (no hardcoded path),
+  - launches launcher loop, worker, cloud monitor,
+  - starts ollama serve if local model port is down.
+
+6) Startup scripts normalized to dynamic root
+- Updated:
+  scripts/start-all.ps1
+  scripts/run-forever.ps1
+  scripts/start-bot.ps1
+  scripts/start-worker.ps1
+  scripts/start-cloud-monitor.ps1
+  scripts/job_worker.py
+  scripts/cloud_relay_probe.py
+
+How to restart everything quickly
+---------------------------------
+Double-click START_KONSTANCE.cmd
+
+1. What Is KonstanceAI
+
+KonstanceAI is a Telegram-first, Jarvis-style AI assistant running on Windows 11. Xavier talks to Konstance naturally through Telegram and Konstance executes tasks, manages itself, generates financial outcomes, and now � safely edits its own source code.
+
+Owner	Xavier
+Platform	Windows 11, Python 3.13
+Interface	Telegram Bot
+Project root	C:\Users\Thinkpad\Desktop\KonstanceAI
+GitHub	kkapone98-cell
+LLM stack	OpenClaw relay ? Ollama (qwen2.5:3b) ? Echo fallback
+Bot token	Stored in .env
+Owner ID	8158300788 (OWNER_ID gate on all privileged commands)
+
+2. What Was Built This Session
+
+Phase 1 � Core Infrastructure (pre-session)
+bot.py: Telegram bot using python-telegram-bot 21.6, fully running
+launcher.py: crash-restart supervisor with backoff and single-instance lock
+smart_reply_engine.py: 3-tier LLM routing with memory
+data/memory.json: last 20 conversation exchanges persisted and injected into prompts
+OpenClaw gateway: ws://127.0.0.1:18789, auto-starts on boot
+All CRLF normalized, .env configured, single instance lock working
+
+Phase 2 � Self-Editing Capability (this session, Part 1)
+install_self_edit.py � one-file installer that deploys all of the following:
+scripts/modules/code_editor.py: safe edit engine
+  backup_file() � timestamped .bak before every write
+  compile_check() � py_compile gate on temp file before touching disk
+  apply_patch() � backup + pre-compile + write + post-compile + auto-rollback
+  rollback() � restore most recent backup of any file
+  risk_level() � 'high' for bot.py/launcher.py, 'low' for scripts/modules/
+scripts/modules/intent_router.py: plain language ? code action mapper
+  keyword pre-filter (no LLM call for obvious non-code messages)
+  LLM classification via OpenClaw/Ollama with JSON-only system prompt
+  fast-path for rollback and show_drafts without LLM call
+data/pending_edits.json: stores high-risk drafts awaiting approval
+bot.py patched with 4 new commands: /drafts, /approve, /reject, /rollback
+on_text() extended: after LLM reply, routes code intents automatically
+
+Phase 3 � Self-Awareness (this session, Part 2)
+install_self_awareness.py � one-file installer that deploys:
+data/mission.json: Xavier fills in Konstance's mission, goals, constraints, financial context. Editable any time in Notepad.
+scripts/modules/self_model.py: reads the entire codebase on every prompt
+  Extracts docstrings and descriptions from all .py files
+  Finds all registered /commands automatically
+  Builds a structured self-description block
+  5-minute cache, force-refreshed whenever Konstance edits its own code
+  Updates mission.json with current capability list automatically
+smart_reply_engine.py patched: self-model block injected into every LLM prompt
+
+3. Current File Structure
+
+KonstanceAI/
+  bot.py                          # Core Telegram bot (HIGH RISK)
+  launcher.py                     # Supervisor/restart loop (HIGH RISK)
+  main.py                         # Legacy stub (guarded)
+  .env                            # All secrets and config
+  requirements.txt
+  install_self_edit.py            # Self-edit feature installer
+  install_self_awareness.py       # Self-awareness installer
+  data/
+    bot.lock                      # Single instance lock
+    health.json
+    llm.json
+    memory.json                   # Last 20 conversation exchanges
+    mission.json                  # Konstance's goals (YOU edit this)
+    pending_edits.json            # High-risk drafts awaiting approval
+    self_map.json                 # Cached codebase scan (auto-updated)
+  logs/bot.log
+  scripts/
+    __init__.py
+    modules/
+      __init__.py
+      smart_reply_engine.py       # LLM routing + memory + style
+      code_editor.py             # Safe edit engine
+      intent_router.py           # Plain language ? code action mapper
+      self_model.py              # Self-awareness + codebase scanner
+  tests/
+    test_bot_config.py
+    test_smart_reply_engine.py
+
+4. Guardrails (Locked � Never Remove)
+
+SAFETY RULES ALWAYS IN EFFECT
+?  Single instance lock (bot.lock) � never two pollers running
+?  Timestamped .bak backup before EVERY file write
+?  py_compile check on temp file BEFORE writing to disk
+?  Post-write compile check � auto-rollback on failure
+?  OWNER_ID=8158300788 gate on all privileged commands
+?  bot.py and launcher.py = HIGH RISK � require /approve from Xavier
+?  scripts/modules/* = LOW RISK � auto-apply after compile check
+?  Modular-only changes � new code always in scripts/modules/
+?  Exit code 11 = duplicate instance (handled separately by launcher)
+
+5. How Konstance Self-Edits Its Own Code
+
+When Xavier sends a plain-language message in Telegram:
+
+Xavier:    'add rate limiting so users can only message once every 3 seconds'
+
+Konstance: 1. Sends normal LLM reply first
+           2. intent_router detects: is_code_request=true, risk=high
+           3. Asks LLM to generate the full updated file
+           4. Runs compile_check_string() on the generated code
+           5. If compile fails ? reports error, nothing touched
+           6. If HIGH RISK ? backup + store in pending_edits.json
+              ? 'Staged as draft abc12345. /approve abc12345 to apply'
+           7. Xavier sends: /approve abc12345
+           8. apply_patch() runs: backup + write + post-compile
+           9. self_model.refresh() � Konstance updates its self-knowledge
+          10. 'Applied. Backup: bot.py.bak.1741234567. Test it now.'
+
+6. How Konstance Knows Itself
+
+On every single message, before the LLM sees the user's text, it receives:
+
+SELF-MODEL BLOCK (injected into every prompt)
+IDENTITY:         Name, owner, mission statement from mission.json
+PERSONALITY:      Tone and communication style from mission.json
+FINANCIAL CONTEXT: Why it exists and what outcomes matter
+GOALS:            Numbered list of objectives from mission.json
+CONSTRAINTS:      Hard rules it must never violate
+MY CODEBASE:      Every .py file with its description (live scan)
+MY COMMANDS:      Every /command currently registered
+SELF-EDIT CAPABILITY:  What it can and can't modify without approval
+
+The mission.json file is the control panel. Xavier edits it in Notepad � no code changes needed � and Konstance immediately reflects the updated goals on the next message.
+
+7. What To Test In Telegram After Restart
+
+Message to send	Expected result
+/drafts	'No pending drafts.'
+what are you capable of?	Lists all commands and modules from self-model
+what is your mission?	Reads and recites mission.json goals
+add a /ping command	Detects code intent, generates code, stages draft, prompts /approve
+/approve <id>	Applies draft, reports backup name, confirms success
+/rollback bot.py	Restores most recent .bak, confirms filename
+what files are you made of?	Lists all .py files with descriptions from self_model scan
+
+
+
+????????????????????????????????????????????????
+CURSOR AI PROMPT
+Copy everything below and paste into Cursor's composer
+You are an expert Python engineer and AI system architect helping me build,
+analyze, and evolve KonstanceAI � a Telegram-first AI assistant running on
+Windows 11 that can safely edit its own source code through natural conversation.
+
+???????????????????????????????????????????????????????
+PROJECT OVERVIEW
+???????????????????????????????????????????????????????
+
+Owner:        Xavier
+Project root: C:\Users\Thinkpad\Desktop\KonstanceAI
+Platform:     Windows 11, Python 3.13
+Interface:    Telegram Bot
+LLM stack:    OpenClaw relay (ws://127.0.0.1:18789) ?
+              Ollama local (qwen2.5:3b) ? echo fallback
+
+MISSION:
+Konstance is Xavier's Jarvis. It executes tasks, manages itself,
+generates real financial outcomes, and improves its own capabilities
+over time � all through natural Telegram conversation.
+
+???????????????????????????????????????????????????????
+CURRENT FILE STRUCTURE
+???????????????????????????????????????????????????????
+
+KonstanceAI/
+  bot.py                     # Core Telegram bot (HIGH RISK file)
+  launcher.py                # Crash-restart supervisor (HIGH RISK)
+  .env                       # Secrets (OWNER_ID, tokens, etc)
+  data/
+    memory.json              # Last 20 conversation exchanges
+    mission.json             # Goals, personality, constraints (Xavier edits)
+    pending_edits.json       # High-risk code drafts awaiting approval
+    self_map.json            # Cached codebase scan
+  scripts/modules/
+    smart_reply_engine.py    # 3-tier LLM routing + memory
+    code_editor.py           # Safe edit engine (backup+compile+write)
+    intent_router.py         # Plain language ? code action mapper
+    self_model.py            # Self-awareness + codebase scanner
+
+???????????????????????????????????????????????????????
+GUARDRAILS � NEVER VIOLATE THESE
+???????????????????????????????????????????????????????
+
+- Single instance lock (bot.lock) � never two bot pollers
+- Timestamped .bak backup before EVERY file write
+- py_compile check on temp file BEFORE writing to disk
+- Post-write compile check + auto-rollback on failure
+- OWNER_ID gate on all privileged commands
+- bot.py + launcher.py = HIGH RISK ? require /approve from Xavier
+- scripts/modules/* = LOW RISK ? auto-apply after compile check
+- New code always in scripts/modules/ (never pollute bot.py core)
+
+???????????????????????????????????????????????????????
+SELF-EDIT FLOW (already working)
+???????????????????????????????????????????????????????
+
+Xavier plain-text ? intent_router.parse_code_request()
+  ? LOW RISK:  backup + compile + apply + report
+  ? HIGH RISK: backup + store draft + ask for /approve
+Xavier /approve <id> ? compile + apply + report
+Xavier /reject <id>  ? discard draft
+Xavier /rollback <file> ? restore most recent .bak
+
+???????????????????????????????????????????????????????
+SELF-AWARENESS (already working)
+???????????????????????????????????????????????????????
+
+On every LLM call, Konstance receives its self-model block:
+  - Mission + goals + constraints from data/mission.json
+  - Live scan of all .py files with descriptions
+  - All registered /commands
+  - Self-edit capability summary
+Cache: 5 min, force-refreshed after every code edit
+
+???????????????????????????????????????????????????????
+YOUR TASK
+???????????????????????????????????????????????????????
+
+Please do all of the following:
+
+1. ANALYZE � Read every file in the project. Understand what each
+   module does, how they connect, and what the data flow looks like
+   end-to-end from Xavier's Telegram message to a code change on disk.
+
+2. ASSESS MISSION ALIGNMENT � Read data/mission.json. For each goal
+   Xavier has written, tell me: does the current codebase actually
+   support achieving it? What is missing?
+
+3. FIND GAPS � What capabilities does Konstance still need to fully
+   execute Xavier's mission? Be specific (module name, what it does,
+   why it matters for financial outcomes).
+
+4. FIND RISKS � What could break silently? What edge cases aren't
+   handled? What would cause a bad self-edit to slip through?
+
+5. PRIORITIZE � Give Xavier a ranked list of the next 5 things to
+   build, ordered by impact on the mission. For each one:
+   - What it is
+   - Why it matters (tie to a specific goal in mission.json)
+   - Which file it lives in
+   - Risk level
+
+6. PROPOSE � For the #1 priority item, write the complete
+   implementation following all guardrails above.
+
+???????????????????????????????????????????????????????
+CONSTRAINTS FOR YOUR OUTPUT
+???????????????????????????????????????????????????????
+
+- Do not suggest changing the LLM provider or Telegram library
+- Do not break the existing 3-tier LLM fallback chain
+- All new modules go in scripts/modules/
+- All new code must work on Windows (Python 3.13, no Unix-only libs)
+- Every file write must backup first
+- Every code change must compile-check before applying
+- Never run a second bot instance
+- Keep bot.py as thin as possible � logic belongs in modules
+
+Start by reading the files, then give your analysis.
+
+????????????????????????????????????????????????????????
+END OF CURSOR AI PROMPT
+????????????????????????????????????????????????????????
+
+TIP: In Cursor, open your entire KonstanceAI project folder first, then paste this prompt into the Composer (Ctrl+I). Cursor will automatically read all the files it needs.

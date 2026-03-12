@@ -1,0 +1,1 @@
+{"mode":"local_first","cloud_enabled":true,"escalate_on_keywords":["code","debug","error","architecture","plan","research","analyze","strategy"],"escalate_min_chars":350,"cloud_timeout_sec":45}

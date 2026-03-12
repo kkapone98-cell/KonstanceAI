@@ -1,0 +1,53 @@
+{
+  "tasks": [
+    {
+      "id": "task_1773263650",
+      "text": "test phase d",
+      "status": "done",
+      "created_at": 1773263650,
+      "done_at": 1773263658
+    },
+    {
+      "id": "task_1773263904",
+      "text": "phase e",
+      "status": "open",
+      "created_at": 1773263904,
+      "done_at": null
+    },
+    {
+      "id": "task_1773267191",
+      "text": "Define objective and constraints for: Build a Craigslist-to-eBay flip workflow",
+      "status": "open",
+      "created_at": 1773267191,
+      "done_at": null
+    },
+    {
+      "id": "task_1773267191",
+      "text": "Create one scout agent for: Build a Craigslist-to-eBay flip workflow",
+      "status": "open",
+      "created_at": 1773267191,
+      "done_at": null
+    },
+    {
+      "id": "task_1773267191",
+      "text": "Generate one starter script for: Build a Craigslist-to-eBay flip workflow",
+      "status": "open",
+      "created_at": 1773267191,
+      "done_at": null
+    },
+    {
+      "id": "task_1773267191",
+      "text": "Run scout and script once for: Build a Craigslist-to-eBay flip workflow",
+      "status": "open",
+      "created_at": 1773267191,
+      "done_at": null
+    },
+    {
+      "id": "task_1773267191",
+      "text": "Review outputs and pick next best action for: Build a Craigslist-to-eBay flip workflow",
+      "status": "open",
+      "created_at": 1773267191,
+      "done_at": null
+    }
+  ]
+}

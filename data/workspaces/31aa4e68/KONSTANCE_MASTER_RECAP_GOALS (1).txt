@@ -1,0 +1,143 @@
+KONSTANCE MASTER RECAP + GOALS
+Generated: 2026-03-11
+
+==================================================
+1) VISION (END STATE)
+==================================================
+Konstance becomes a Telegram-first Jarvis-style wealth operator that can:
+- Converse naturally like a real assistant
+- Persist memory across restarts
+- Understand its own capabilities/tools and choose actions accordingly
+- Create/execute/improve sub-agents and scripts
+- Run mostly hands-off from Telegram with stability + guardrails
+- Generate measurable financial outcomes
+
+==================================================
+2) WHAT HAS BEEN BUILT SO FAR
+==================================================
+Core + Runtime
+- Telegram bot core running (Gv2 baseline)
+- Background task startup patterns created
+- Dispatcher concept and queue processing scaffolds created
+- Health check script added (bot/process/file status)
+- Runbook/checklist artifacts added
+
+Safety + Control
+- Owner-gated action pattern introduced
+- Approval-first approach for risky operations repeatedly reinforced
+- Backup/restore patterns established and used many times
+- Compile-gate workflow repeatedly used for recovery
+
+Capability Modules (modular path)
+- Script factory scaffolds
+- Sub-agent scaffolds
+- Action/job queue scaffolds
+- Autonomy queue scaffolds
+- Intent alias/router scaffolds
+- Critic/proposer/apply scaffolds
+
+Wealth Modules (flip lane)
+- Flip bot scaffold
+- Collector/scorer/listing draft pipeline files
+- Publish queue/approval helpers
+- Daily runner + KPI tracker scaffolds
+- Money memory/menu concepts and command path scaffolds
+
+Cloud / OpenClaw
+- OpenClaw usage attempted
+- Gateway on Windows currently unstable/noisy in this session
+- Cloud-config flag visible in status but runtime reliability still needs hardening
+
+==================================================
+3) CURRENT PRACTICAL STATE
+==================================================
+Working:
+- Konstance can run and reply in Telegram
+- Status-style visibility exists
+- Modular build direction is clear
+
+Fragile:
+- Core bot.py has been patched many times and can regress
+- Process conflicts (duplicate pollers) have occurred repeatedly
+- Service/runtime wiring on Windows (OpenClaw gateway) is not yet clean
+- Not fully autonomous self-improvement in-chat yet
+
+==================================================
+4) FINAL GOAL SET (FULL)
+==================================================
+A) Telegram-First Natural Control
+- Full operation from Telegram without laptop babysitting
+- Plain-language requests map to reliable action
+
+B) Permanent Memory
+- Durable structured memory across restarts
+- Strategy + outcomes + preferences preserved and queryable
+
+C) Capability Self-Awareness
+- Bot always knows what tools/modules/models it has
+- Decisions based on real capability index, not guesses
+
+D) Policy-Driven Self-Improvement
+- Low-risk edits auto-apply
+- High-risk/core edits require explicit approval
+- Compile/test/rollback enforced
+
+E) Stability + Self-Heal
+- Single runtime ownership (no poller conflicts)
+- Auto-restart + health verification
+- Fast rollback to known-good baseline
+
+F) Wealth OS Outcomes
+- Opportunity pipeline (discovery -> score -> execution)
+- Outcome tracking (wins/losses/profit)
+- Weekly learning loop (double down / pause / test)
+
+G) Multi-Model Advantage
+- Route easy tasks local/fast
+- Escalate hard analysis/coding to stronger models
+- Reliable fallback path
+
+H) Multi-Language Builder
+- Generate/test/execute Python/JS/Shell safely
+- Unified logs + validations
+
+I) Owner-Controlled Autonomy
+- Single-operator control model
+- Explicit permission tiers
+- Full auditability of autonomous actions
+
+J) Commandless UX Quality
+- Confidence-based intent routing (execute/confirm/clarify)
+- Human-quality conversation style
+
+K) Conversational Self-Evolution + Full Historical Reference
+- User can talk to Konstance naturally (as in this chat) to request improvements to Konstance itself
+- Konstance can reference prior work/history/artifacts and suggest concrete upgrades proactively
+- Konstance can summarize "what changed" and recommend next optimizations based on everything tracked
+
+==================================================
+5) DEFINITION OF DONE
+==================================================
+You can send Telegram requests like:
+"Improve flip bot scoring for faster turnover and better margin quality."
+
+Konstance then:
+1) Understands intent
+2) Audits current module/performance
+3) Proposes improvement plan
+4) Auto-applies low-risk patch set
+5) Requests approval for risky changes
+6) Validates with tests
+7) Reports exact changes + outcome metrics
+
+No manual shell firefighting required for normal operation.
+
+==================================================
+6) OPERATING PRINCIPLES (LOCKED)
+==================================================
+- Modular-only changes by default
+- Backup before change
+- Compile/test before deploy
+- Never run duplicate bot pollers
+- Keep one active lane at a time when stabilizing
+- Measure outcomes, not just feature count

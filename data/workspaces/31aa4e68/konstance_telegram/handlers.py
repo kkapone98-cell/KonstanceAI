@@ -1,0 +1,56 @@
+"""Telegram command and text handlers built on the application service."""
+
+from __future__ import annotations
+
+import logging
+
+from telegram import Update
+from telegram.error import Conflict
+from telegram.ext import ContextTypes
+
+from core.application import KonstanceApplication
+from core.contracts import MessageContext
+from konstance_telegram.renderers import render_response
+
+log = logging.getLogger("konstance.bot")
+
+
+def _context_from_update(app: KonstanceApplication, update: Update, text: str) -> MessageContext:
+    user = update.effective_user
+    return MessageContext(
+        user_id=getattr(user, "id", 0) or 0,
+        text=text,
+        is_owner=bool(user and app.config.has_owner and user.id == app.config.owner_id),
+    )
+
+
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    app_service: KonstanceApplication = context.application.bot_data["konstance_app"]
+    text = (update.message.text or "").strip()
+    if not text:
+        return
+
+    response = app_service.handle_user_message(_context_from_update(app_service, update, text))
+    for message in render_response(response):
+        await update.message.reply_text(message[:3900])
+    if response.metadata.get("owner_alert") and app_service.config.has_owner:
+        alert_text = str(response.metadata.get("owner_alert_text") or response.text).strip()
+        try:
+            await context.bot.send_message(chat_id=app_service.config.owner_id, text=alert_text[:3900])
+        except Exception:
+            log.exception("Failed to send owner alert")
+
+
+async def handle_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await handle_message(update, context)
+
+
+async def handle_error(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if isinstance(context.error, Conflict):
+        log.info("Telegram polling conflict detected; stopping this instance.")
+        context.application.bot_data["telegram_conflict"] = True
+        await context.application.stop()
+        return
+    # Keep non-conflict diagnostics in bot.log.
+    log.exception("Telegram handler error", exc_info=context.error)
+

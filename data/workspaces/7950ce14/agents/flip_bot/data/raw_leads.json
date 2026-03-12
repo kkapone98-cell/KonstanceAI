@@ -1,0 +1,7 @@
+﻿{
+  "items": [
+    {"title":"Trek bike - moving sale", "source":"manual", "price":40, "url":"", "category":"bikes", "location":"local"},
+    {"title":"Dell monitor 24 inch", "source":"manual", "price":25, "url":"", "category":"electronics", "location":"local"},
+    {"title":"Tool lot - must go", "source":"manual", "price":30, "url":"", "category":"tools", "location":"local"}
+  ]
+}

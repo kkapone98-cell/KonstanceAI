@@ -1,0 +1,1 @@
+{"auto_apply_low_risk":false,"low_risk_paths":["scripts/generated"],"approval_required_paths":["bot.py","scripts/action_runner.py","scripts/autoplan_engine.py"]}

@@ -1,0 +1,14 @@
+{
+  "id": "proposal_1773275046",
+  "goal": "improve flip scoring for fast turnover",
+  "created_at": 1773275046,
+  "targets": [],
+  "changes": [
+    "replace TODO scaffold body with concrete logic",
+    "add validation for input arguments",
+    "append structured logging to logs/module-name.log",
+    "return deterministic JSON output for downstream jobs"
+  ],
+  "risk": "low",
+  "status": "proposed"
+}

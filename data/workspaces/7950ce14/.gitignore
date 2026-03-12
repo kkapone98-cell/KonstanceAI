@@ -1,0 +1,19 @@
+﻿# Ignore folders
+backups
+__pycache__
+logs
+venv
+.venv
+
+# Python cache
+*.py[cod]
+
+# Logs
+*.log
+
+# Environment files
+.env
+
+# OS files
+.DS_Store
+Thumbs.db

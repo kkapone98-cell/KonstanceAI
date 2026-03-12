@@ -1,0 +1,173 @@
+﻿import os, json, time, subprocess
+from pathlib import Path
+import requests
+from telegram import Update
+from telegram.ext import ApplicationBuilder, MessageHandler, ContextTypes, filters
+
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN","")
+OLLAMA_URL = os.getenv("OLLAMA_URL","http://127.0.0.1:11434")
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL","mistral")
+ADMIN_USER_ID = int(os.getenv("ADMIN_USER_ID","0"))
+BASE_DIR = Path(os.getenv("BASE_DIR",".")).resolve()
+
+MEM = BASE_DIR/"memory"; LOG = BASE_DIR/"logs"; AGENTS = BASE_DIR/"agents"; SCRIPTS = BASE_DIR/"scripts"
+CONV = MEM/"conversations.json"; PENDING = MEM/"pending_edits.json"; GOALS = MEM/"goals.json"
+
+def ensure():
+    for d in [MEM, LOG, AGENTS, SCRIPTS]: d.mkdir(parents=True, exist_ok=True)
+    if not CONV.exists(): CONV.write_text("[]",encoding="utf-8")
+    if not PENDING.exists(): PENDING.write_text("{}",encoding="utf-8")
+    if not GOALS.exists(): GOALS.write_text("[]",encoding="utf-8")
+
+def jload(p,fb):
+    try: return json.loads(p.read_text(encoding="utf-8"))
+    except: return fb
+
+def jsave(p,d): p.write_text(json.dumps(d,indent=2,ensure_ascii=False),encoding="utf-8")
+
+def llm(prompt):
+    r = requests.post(f"{OLLAMA_URL}/api/generate", json={"model":OLLAMA_MODEL,"prompt":prompt,"stream":False, "options":{"num_predict":220,"temperature":0.4}}, timeout=300)
+    r.raise_for_status()
+    return r.json().get("response","").strip() or "No response."
+
+def safe(rel):
+    p=(BASE_DIR/rel).resolve()
+    roots=[AGENTS.resolve(),SCRIPTS.resolve(),BASE_DIR.resolve()]
+    if not any((p==r or r in p.parents) for r in roots): raise ValueError("Outside workspace")
+    return p
+
+def mkdraft(uid, rel, content, note=""):
+    d=jload(PENDING,{})
+    did=f"{uid}-{int(time.time())}"
+    d[did]={"user_id":uid,"target":rel,"content":content,"note":note,"created_at":int(time.time())}
+    jsave(PENDING,d); return did
+
+def backup_file(path: Path):
+    ts = int(time.time())
+    bak = path.with_suffix(path.suffix + f".bak.{ts}")
+    if path.exists():
+        bak.write_text(path.read_text(encoding="utf-8"), encoding="utf-8")
+    return bak
+
+def compile_check(path: Path):
+    result = subprocess.run(["python","-m","py_compile",str(path)], capture_output=True, text=True)
+    return result.returncode == 0, (result.stderr or result.stdout or "").strip()
+
+def latest_bot_backup():
+    baks = sorted(BASE_DIR.glob("bot.py.bak.*"), key=lambda p: p.stat().st_mtime, reverse=True)
+    return baks[0] if baks else None
+
+def applydraft(uid,did):
+    d=jload(PENDING,{})
+    rec=d.get(did)
+    if not rec: return "No such draft."
+    if rec["user_id"]!=uid: return "Not your draft."
+
+    rel = rec["target"]
+    t=safe(rel); t.parent.mkdir(parents=True,exist_ok=True)
+
+    if rel.replace("\\","/").lower() == "bot.py":
+        tmp = BASE_DIR/"bot.py.candidate.py"
+        tmp.write_text(rec["content"],encoding="utf-8")
+        ok, out = compile_check(tmp)
+        if not ok:
+            tmp.unlink(missing_ok=True)
+            return f"âŒ Compile failed. Draft not applied.\n{out[:3000]}"
+        tmp.unlink(missing_ok=True)
+
+    backup_file(t)
+    t.write_text(rec["content"],encoding="utf-8")
+    d.pop(did,None); jsave(PENDING,d)
+    return f"âœ… Applied {t}"
+
+def save_goal(uid, text):
+    g=jload(GOALS,[])
+    g.append({"ts":int(time.time()),"user_id":uid,"goal":text})
+    jsave(GOALS,g[-500:])
+
+async def handle(update:Update, context:ContextTypes.DEFAULT_TYPE):
+    if not update.message: return
+    txt=(update.message.text or "").strip()
+    uid=update.effective_user.id if update.effective_user else 0
+
+    if txt.startswith("/setgoal "):
+        if uid!=ADMIN_USER_ID: return await update.message.reply_text("Not authorized.")
+        goal = txt[len("/setgoal "):].strip()
+        save_goal(uid, goal)
+        return await update.message.reply_text("ðŸŽ¯ Goal saved.")
+
+    if txt.startswith("/draft "):
+        if uid!=ADMIN_USER_ID: return await update.message.reply_text("Not authorized.")
+        try:
+            body=txt[7:]; rel,content=body.split("|",1); rel=rel.strip(); content=content.lstrip(); safe(rel)
+            did=mkdraft(uid,rel,content,"manual draft")
+            return await update.message.reply_text(f"ðŸ›  Draft {did}\nUse /approve {did}")
+        except Exception as e:
+            return await update.message.reply_text(f"Draft failed: {e}")
+
+    if txt.startswith("/improve "):
+        if uid!=ADMIN_USER_ID: return await update.message.reply_text("Not authorized.")
+        try:
+            body = txt[len("/improve "):].strip()
+            if "|" in body:
+                left, goal = body.split("|",1)
+                goal = goal.strip()
+            else:
+                left, goal = "target=scripts/auto_improve.py", body
+
+            rel = "scripts/auto_improve.py"
+            for part in left.split():
+                if part.startswith("target="):
+                    rel = part.split("=",1)[1].strip()
+
+            _ = safe(rel)
+            system_prompt = (
+                "You are upgrading a Python Telegram assistant. "
+                "Return ONLY valid Python code for the target file. "
+                "No markdown, no explanation."
+            )
+            full_prompt = f"{system_prompt}\n\nTarget file: {rel}\nGoal: {goal}\n"
+            code = llm(full_prompt)
+            if "```" in code:
+                code = code.replace("```python","").replace("```","").strip()
+
+            did = mkdraft(uid, rel, code, f"improve goal: {goal}")
+            return await update.message.reply_text(f"ðŸ§  Improvement draft ready: {did}\nTarget: {rel}\nUse /approve {did}")
+        except Exception as e:
+            return await update.message.reply_text(f"Improve failed: {e}")
+
+    if txt.startswith("/approve "):
+        if uid!=ADMIN_USER_ID: return await update.message.reply_text("Not authorized.")
+        return await update.message.reply_text(applydraft(uid, txt.split(" ",1)[1].strip())[:4000])
+
+    if txt.startswith("/rollback"):
+        if uid!=ADMIN_USER_ID: return await update.message.reply_text("Not authorized.")
+        bak = latest_bot_backup()
+        if not bak: return await update.message.reply_text("No bot.py backup found.")
+        (BASE_DIR/"bot.py").write_text(bak.read_text(encoding="utf-8"), encoding="utf-8")
+        return await update.message.reply_text(f"â†©ï¸ Rolled back bot.py from {bak.name}")
+
+    if txt.startswith("/pending"):
+        d=jload(PENDING,{})
+        mine=[f"{k} -> {v['target']} ({v.get('note','')})" for k,v in d.items() if v.get("user_id")==uid]
+        return await update.message.reply_text("No pending drafts." if not mine else "\n".join(mine)[:4000])
+
+    try: out=llm(txt)
+    except Exception as e: out=f"LLM error: {e}"
+
+    c=jload(CONV,[]); c.append({"ts":int(time.time()),"user_id":uid,"user":txt,"ai":out}); jsave(CONV,c[-2000:])
+    await update.message.reply_text(out[:4000])
+
+def main():
+    if not TELEGRAM_TOKEN: raise RuntimeError("Missing TELEGRAM_TOKEN")
+    ensure()
+    app=ApplicationBuilder().token(TELEGRAM_TOKEN).build()
+    app.add_handler(MessageHandler(filters.TEXT, handle))
+    app.run_polling()
+
+if __name__=="__main__": main()
+
+
+
+
+
