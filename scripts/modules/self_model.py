@@ -7,6 +7,7 @@ import json, re, time
 from pathlib import Path
 
 ROOT         = Path(__file__).parent.parent.parent
+CTX_DIR      = ROOT / ".konstance_context"
 MISSION_PATH = ROOT / "data" / "mission.json"
 GOALS_PATH   = ROOT / "data" / "goals.json"
 CACHE_PATH   = ROOT / "data" / "self_map.json"
@@ -21,10 +22,13 @@ def load_mission() -> dict:
 
 
 def load_goals() -> dict:
-    try:
-        return json.loads(GOALS_PATH.read_text(encoding="utf-8"))
-    except Exception:
-        return {"active": [], "achieved": []}
+    for p in (CTX_DIR / "goals.json", GOALS_PATH):
+        try:
+            if p.exists():
+                return json.loads(p.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    return {"active": [], "achieved": []}
 
 
 def scan_codebase() -> dict:

@@ -24,6 +24,7 @@ from core.config import AppConfig
 from core.contracts import MessageContext, MessageResponse
 from core.state import RuntimeState
 from scripts.modules.goal_engine import goals_summary
+from scripts.modules.konstance_context import context_summary, load_progress
 from scripts.modules.smart_reply_engine import ollama_fallback_available, relay_available
 from scripts.modules.safe_executor import execute_owner_command, install_dependency
 
@@ -49,18 +50,21 @@ class KonstanceApplication:
                 relay_detail = (
                     "Relay unavailable. OPENCLAW_CMD is not configured, so launcher cannot auto-start OpenClaw."
                 )
-        return "\n".join(
-            [
-                "Status: running",
-                f"Root: {self.config.root}",
-                f"Relay available: {health.get('relay_available')}",
-                f"Relay detail: {relay_detail}",
-                f"Ollama available: {health.get('ollama_available')}",
-                f"Local model: {self.config.local_llm_model}",
-                f"Restart count: {health.get('restart_count', 0)}",
-                summarize_upgrade_history(self.state),
-            ]
-        )
+        lines = [
+            "Status: running",
+            f"Root: {self.config.root}",
+            f"Relay available: {health.get('relay_available')}",
+            f"Relay detail: {relay_detail}",
+            f"Ollama available: {health.get('ollama_available')}",
+            f"Local model: {self.config.local_llm_model}",
+            f"Restart count: {health.get('restart_count', 0)}",
+            summarize_upgrade_history(self.state),
+        ]
+        try:
+            lines.append(context_summary())
+        except Exception:
+            pass
+        return "\n".join(lines)
 
     def _report_text(self) -> str:
         """Full system snapshot: launcher path, OpenClaw health, LLM, self-upgrade status, errors."""
@@ -86,6 +90,12 @@ class KonstanceApplication:
             f"Restart count: {health.get('restart_count', 0)}",
             summarize_upgrade_history(self.state),
         ]
+        try:
+            prog = load_progress()
+            lines.append(f"Context phase: {prog.get('phase', 'unknown')}")
+            lines.append(f"Current goal: {prog.get('current_goal', '')}")
+        except Exception:
+            pass
         return "\n".join(lines)
 
     def _failure_response(self, text: str) -> MessageResponse:

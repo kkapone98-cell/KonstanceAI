@@ -1,5 +1,12 @@
 {
-  "window_started_at": 0,
-  "recent_restart_times": [],
-  "quarantined": false
+  "window_started_at": 1773352643,
+  "recent_restart_times": [
+    1773352643,
+    1773352649,
+    1773352660,
+    1773352677,
+    1773352698,
+    1773352724
+  ],
+  "quarantined": true
 }

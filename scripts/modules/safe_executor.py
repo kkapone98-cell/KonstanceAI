@@ -74,7 +74,7 @@ def _allowlist(command: list[str], config: AppConfig) -> bool:
         if command[1:3] == ["-m", "unittest"]:
             return True
         target = command[1].replace("\\", "/").lower()
-        if target in {"launcher.py", "bot.py", "openclaw/openclaw_relay.py"}:
+        if target in {"launcher.py", "bot.py", "start.py", "openclaw/openclaw_relay.py", "openclaw\\openclaw_relay.py"}:
             return True
         if target.startswith("scripts/"):
             return True

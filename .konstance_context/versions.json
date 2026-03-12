@@ -1,0 +1,9 @@
+{
+  "context_version": 1,
+  "modules": {
+    "smart_reply_engine": "OLLAMA_MODEL preferred",
+    "openclaw_relay": "OLLAMA_MODEL preferred",
+    "safe_executor": "allowlist + sandbox"
+  },
+  "updated_at": 0
+}

@@ -1,0 +1,15 @@
+{
+  "active": [
+    {
+      "id": "g0001",
+      "goal": "KonstanceAI build complete, bot running, persistent context active",
+      "priority": "high",
+      "status": "achieved",
+      "created_at": 0,
+      "achieved_at": 0,
+      "evidence": "Automated build completed"
+    }
+  ],
+  "achieved": [],
+  "version": 1
+}

@@ -11,6 +11,7 @@ from core.state import RuntimeState, read_json
 from self_edit.diff_engine import unified_diff
 from self_edit.draft_store import DraftStore
 from self_edit.file_policy import is_upgrade_allowed, resolve_repo_path, risk_level
+from scripts.modules.konstance_context import update_progress
 from scripts.modules.self_model import build_self_context, refresh as refresh_self_model
 from scripts.modules.smart_reply_engine import generate_file_update
 from upgrade_system.planner import create_plan
@@ -142,6 +143,10 @@ def approve_upgrade(state: RuntimeState, draft_id: str | None) -> str:
     result = promote_workspace(state.config, workspace, draft["metadata"]["plan_id"])
     store.delete(draft_id)
     refresh_self_model()
+    try:
+        update_progress(steps=[f"promoted {draft_id}"], current_goal=draft.get("description", "")[:100])
+    except Exception:
+        pass
     return (
         f"Draft `{draft_id}` promoted successfully.\n"
         f"Changed files: {', '.join(result['changed_files']) or 'none'}\n"

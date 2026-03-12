@@ -8,22 +8,24 @@ from pathlib import Path
 
 logger       = logging.getLogger(__name__)
 ROOT         = Path(__file__).parent.parent.parent
+CTX_GOALS    = ROOT / ".konstance_context" / "goals.json"
 GOALS_PATH   = ROOT / "data" / "goals.json"
 CAP_LOG_PATH = ROOT / "data" / "capability_log.json"
 
 
 def _load() -> dict:
-    try:
-        if GOALS_PATH.exists():
-            return json.loads(GOALS_PATH.read_text(encoding="utf-8"))
-    except Exception:
-        pass
+    for p in (CTX_GOALS, GOALS_PATH):
+        try:
+            if p.exists():
+                return json.loads(p.read_text(encoding="utf-8"))
+        except Exception:
+            pass
     return {"active": [], "achieved": [], "version": 1}
 
 
 def _save(d: dict):
-    GOALS_PATH.parent.mkdir(parents=True, exist_ok=True)
-    GOALS_PATH.write_text(json.dumps(d, indent=2), encoding="utf-8")
+    CTX_GOALS.parent.mkdir(parents=True, exist_ok=True)
+    CTX_GOALS.write_text(json.dumps(d, indent=2), encoding="utf-8")
 
 
 def _log_improvement(description: str, target_file: str):
