@@ -137,5 +137,5 @@ def install_dependency(config: AppConfig, package: str | None = None) -> dict[st
         pkg = package.strip()
         if not _PKG_RE.match(pkg):
             return {"ok": False, "error": "Invalid package name."}
-        return execute_owner_command(config, f'python -m pip install "{pkg}"')
+        return execute_owner_command(config, f"python -m pip install {pkg}")
     return execute_owner_command(config, "python -m pip install -r requirements.txt")

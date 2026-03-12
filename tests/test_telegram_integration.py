@@ -4,8 +4,10 @@ from pathlib import Path
 from unittest.mock import patch
 
 from core.application import KonstanceApplication
+from ai_brain.intent_parser import parse_intent
 from core.config import load_config
 from core.contracts import MessageContext
+from scripts.modules.safe_executor import install_dependency
 
 
 class TelegramIntegrationTests(unittest.TestCase):
@@ -52,6 +54,27 @@ class TelegramIntegrationTests(unittest.TestCase):
                 )
                 self.assertIn("Command failed", blocked.text)
                 self.assertTrue(blocked.metadata.get("owner_alert"))
+
+    def test_startclean_intent_matches_slash_command(self):
+        intent = parse_intent("/startclean")
+        self.assertEqual(intent.name, "start_clean")
+
+    def test_install_dependency_package_command_has_no_quotes(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            (root / "data").mkdir()
+            (root / "logs").mkdir()
+            with patch.dict(
+                "os.environ",
+                {"TELEGRAM_BOT_TOKEN": "123:abc", "OWNER_ID": "99", "KONSTANCE_ROOT": str(root)},
+                clear=False,
+            ):
+                config = load_config(root)
+                with patch("scripts.modules.safe_executor.execute_owner_command") as mock_exec:
+                    mock_exec.return_value = {"ok": True, "returncode": 0, "output": "ok", "command": []}
+                    install_dependency(config, "requests")
+                    called = mock_exec.call_args[0][1]
+                    self.assertEqual(called, "python -m pip install requests")
 
     def test_non_owner_cannot_plan_upgrade(self):
         with tempfile.TemporaryDirectory() as td:

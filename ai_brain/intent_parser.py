@@ -48,7 +48,7 @@ def parse_intent(text: str) -> IntentResult:
         pkg_match = re.search(r"\b([A-Za-z0-9_.\-]+)\b(?:\s*)$", raw)
         package = pkg_match.group(1) if pkg_match and pkg_match.group(1).lower() not in {"dependencies", "dependency"} else None
         return IntentResult(name="install_dependency", requires_owner=True, entities={"package": package})
-    if re.search(r"\b(start clean|start-clean|safe start)\b", lower):
+    if re.search(r"^/startclean\b", lower) or re.search(r"\b(startclean|start clean|start-clean|safe start)\b", lower):
         return IntentResult(name="start_clean", requires_owner=True)
     if re.search(r"\brestart\b.*\b(bot|launcher|konstance)\b", lower):
         return IntentResult(name="restart_runtime", requires_owner=True)
