@@ -1,4 +1,4 @@
-﻿# Ignore folders
+# Ignore folders
 backups
 __pycache__
 logs
@@ -13,6 +13,9 @@ venv
 
 # Environment files
 .env
+
+# Runtime lock files
+data/bot.lock
 
 # OS files
 .DS_Store
