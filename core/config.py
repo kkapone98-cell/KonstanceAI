@@ -49,6 +49,7 @@ class AppConfig:
     openclaw_cmd: str
     openclaw_cwd: str
     ollama_model: str
+    local_llm_model: str
 
     def ensure_runtime_dirs(self) -> None:
         self.data_dir.mkdir(parents=True, exist_ok=True)
@@ -96,6 +97,7 @@ def load_config(root: str | Path | None = None) -> AppConfig:
         openclaw_cmd=(os.getenv("OPENCLAW_CMD") or "").strip(),
         openclaw_cwd=_normalize_optional_path((os.getenv("OPENCLAW_CWD") or "").strip(), project_root),
         ollama_model=model,
+        local_llm_model=(os.getenv("LOCAL_LLM_MODEL") or model or "qwen2.5").strip(),
     )
     config.ensure_runtime_dirs()
     # region agent log

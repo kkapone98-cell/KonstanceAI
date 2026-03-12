@@ -16,6 +16,7 @@ from ai_brain.self_upgrade_agent import (
     plan_upgrade_request,
     reject_upgrade,
     rollback_upgrade,
+    run_self_upgrade_smoke,
     summarize_upgrade_history,
 )
 from ai_brain.task_planner import select_workflow
@@ -25,6 +26,7 @@ from core.contracts import MessageContext, MessageResponse
 from core.state import RuntimeState
 from scripts.modules.goal_engine import goals_summary
 from scripts.modules.smart_reply_engine import ollama_fallback_available, relay_available
+from scripts.modules.safe_executor import execute_owner_command, install_dependency
 
 
 class KonstanceApplication:
@@ -40,6 +42,14 @@ class KonstanceApplication:
             ollama_available=ollama_fallback_available(),
             last_message=int(time.time()),
         )
+        relay_detail = "Relay reachable."
+        if not health.get("relay_available"):
+            if self.config.openclaw_cmd:
+                relay_detail = "Relay unavailable. OPENCLAW_CMD is configured, but the relay is not responding."
+            else:
+                relay_detail = (
+                    "Relay unavailable. OPENCLAW_CMD is not configured, so launcher cannot auto-start OpenClaw."
+                )
         # region agent log
         try:
             with (self.config.root / "debug-2cefd0.log").open("a", encoding="utf-8") as fh:
@@ -55,6 +65,7 @@ class KonstanceApplication:
                                 "relay_available": health.get("relay_available"),
                                 "ollama_available": health.get("ollama_available"),
                                 "restart_count": health.get("restart_count", 0),
+                                "relay_detail": relay_detail,
                             },
                             "timestamp": int(time.time() * 1000),
                         },
@@ -70,10 +81,21 @@ class KonstanceApplication:
                 "Status: running",
                 f"Root: {self.config.root}",
                 f"Relay available: {health.get('relay_available')}",
+                f"Relay detail: {relay_detail}",
                 f"Ollama available: {health.get('ollama_available')}",
+                f"Local model: {self.config.local_llm_model}",
                 f"Restart count: {health.get('restart_count', 0)}",
                 summarize_upgrade_history(self.state),
             ]
+        )
+
+    def _failure_response(self, text: str) -> MessageResponse:
+        return MessageResponse(
+            text=text,
+            metadata={
+                "owner_alert": True,
+                "owner_alert_text": f"Konstance operation failed: {text}",
+            },
         )
 
     def handle_user_message(self, context: MessageContext) -> MessageResponse:
@@ -99,6 +121,39 @@ class KonstanceApplication:
                 return MessageResponse(text=reject_upgrade(self.state, intent.entities.get("draft_id")))
             if intent.name == "rollback_upgrade":
                 return MessageResponse(text=rollback_upgrade(self.state))
+            if intent.name == "run_local_command":
+                result = execute_owner_command(self.config, intent.entities.get("command") or context.text)
+                if not result.get("ok"):
+                    return self._failure_response(f"Command failed: {result.get('error') or result.get('output')}")
+                return MessageResponse(
+                    text=f"Command succeeded (code {result.get('returncode', 0)}).\n{result.get('output', '')}"
+                )
+            if intent.name == "install_dependency":
+                result = install_dependency(self.config, intent.entities.get("package"))
+                if not result.get("ok"):
+                    return self._failure_response(
+                        f"Dependency install failed: {result.get('error') or result.get('output')}"
+                    )
+                return MessageResponse(text=f"Dependency install completed.\n{result.get('output', '')}")
+            if intent.name == "restart_runtime":
+                result = execute_owner_command(self.config, "python launcher.py --restart --once")
+                if not result.get("ok"):
+                    return self._failure_response(
+                        f"Restart command failed: {result.get('error') or result.get('output')}"
+                    )
+                return MessageResponse(text="Restart command dispatched via launcher.")
+            if intent.name == "start_clean":
+                result = execute_owner_command(self.config, "python launcher.py --start-clean --once")
+                if not result.get("ok"):
+                    return self._failure_response(
+                        f"Start-clean command failed: {result.get('error') or result.get('output')}"
+                    )
+                return MessageResponse(text="Start-clean command dispatched via launcher.")
+            if intent.name == "self_upgrade_test":
+                result = run_self_upgrade_smoke(self.state, context.user_id)
+                if "failed" in result.lower():
+                    return self._failure_response(result)
+                return MessageResponse(text=result)
 
         if workflow == "doctor":
             return MessageResponse(text=run_doctor(self.state))
@@ -130,7 +185,8 @@ class KonstanceApplication:
             return MessageResponse(
                 text=(
                     "Konstance can chat, report status, run doctor diagnostics, list drafts, "
-                    "plan safe upgrades, approve validated drafts, and roll back the last promotion."
+                    "plan safe upgrades, approve validated drafts, roll back the last promotion, "
+                    "run owner-safe local commands, and install dependencies."
                 )
             )
 

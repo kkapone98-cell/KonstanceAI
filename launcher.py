@@ -2,15 +2,20 @@
 
 from __future__ import annotations
 
+import argparse
 from pathlib import Path
 
 from core.config import load_config
 from launcher.preflight import run_preflight
-from launcher.service_manager import run_supervisor
+from launcher.service_manager import run_supervisor, start_clean, terminate_running_bot
 
 
-def run_forever() -> int:
+def run_forever(restart: bool = False, clean: bool = False) -> int:
     config = load_config()
+    if clean:
+        start_clean(config)
+    elif restart:
+        terminate_running_bot(config)
     preflight = run_preflight()
     if not preflight.ok:
         print(preflight.summary)
@@ -26,5 +31,18 @@ def run_forever() -> int:
     return code
 
 
+def _parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="KonstanceAI safe launcher")
+    parser.add_argument("--restart", action="store_true", help="Terminate active bot process before startup.")
+    parser.add_argument("--start-clean", action="store_true", help="Reset runtime lock/restart state before startup.")
+    parser.add_argument(
+        "--once",
+        action="store_true",
+        help="Alias flag kept for Telegram compatibility; launcher still supervises the bot.",
+    )
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
-    raise SystemExit(run_forever())
+    args = _parse_args()
+    raise SystemExit(run_forever(restart=args.restart, clean=args.start_clean))

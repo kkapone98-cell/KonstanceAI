@@ -199,3 +199,15 @@ def summarize_upgrade_history(state: RuntimeState) -> str:
     files = ", ".join(last.get("changed_files", [])) or "none"
     return f"Last promoted plan `{last.get('plan_id')}` changed: {files}"
 
+
+def run_self_upgrade_smoke(state: RuntimeState, user_id: int) -> str:
+    """Exercise sandbox+validator pipeline without touching live files."""
+    intent = IntentResult(name="self_upgrade_test", requires_owner=True, entities={})
+    plan = create_plan(state.upgrade_plans_path, intent, user_id, "Self-upgrade smoke test")
+    workspace = create_workspace(state.config, plan)
+    report = validate_workspace(state.config, workspace)
+    if report.ok:
+        return f"Self-upgrade smoke test passed in workspace `{plan.plan_id}`."
+    failed = [step["label"] for step in report.steps if not step["ok"]]
+    return f"Self-upgrade smoke test failed ({', '.join(failed) or 'unknown'})."
+

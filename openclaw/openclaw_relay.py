@@ -35,6 +35,15 @@ def _relay_token() -> str:
     return (os.getenv("OPENCLAW_RELAY_TOKEN") or "").strip()
 
 
+def _local_model() -> str:
+    return (
+        os.getenv("LOCAL_LLM_MODEL")
+        or os.getenv("OPENCLAW_OLLAMA_MODEL")
+        or os.getenv("OLLAMA_MODEL")
+        or "qwen2.5"
+    ).strip()
+
+
 def _safe_json(data: bytes) -> dict:
     try:
         return json.loads(data.decode("utf-8", errors="ignore"))
@@ -42,8 +51,10 @@ def _safe_json(data: bytes) -> dict:
         return {}
 
 
-def _ollama_generate(prompt: str, timeout_sec: int = 45) -> str:
-    model = (os.getenv("OPENCLAW_OLLAMA_MODEL") or os.getenv("OLLAMA_MODEL") or "qwen2.5:3b").strip()
+def _ollama_generate(prompt: str, model: str, timeout_sec: int = 45) -> str:
+    model = (model or "qwen2.5").strip()
+    if ":" not in model and "/" not in model:
+        model = f"{model}:3b"
     payload = {"model": model, "prompt": prompt, "stream": False}
     req = urllib_request.Request(
         "http://127.0.0.1:11434/api/generate",
@@ -55,6 +66,35 @@ def _ollama_generate(prompt: str, timeout_sec: int = 45) -> str:
         raw = resp.read().decode("utf-8", errors="ignore")
     body = json.loads(raw)
     return str(body.get("response") or "").strip()
+
+
+def _hf_generate(prompt: str, model: str, timeout_sec: int = 45) -> str:
+    token = (os.getenv("HUGGINGFACE_API_TOKEN") or "").strip()
+    if not token:
+        return ""
+    clean_model = model.replace("hf:", "", 1).strip()
+    if not clean_model:
+        return ""
+    payload = {"inputs": prompt, "parameters": {"max_new_tokens": 300, "temperature": 0.2}}
+    req = urllib_request.Request(
+        f"https://api-inference.huggingface.co/models/{clean_model}",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token}",
+        },
+        method="POST",
+    )
+    with urllib_request.urlopen(req, timeout=timeout_sec) as resp:
+        raw = resp.read().decode("utf-8", errors="ignore")
+    obj = json.loads(raw)
+    if isinstance(obj, list) and obj:
+        first = obj[0]
+        if isinstance(first, dict):
+            return str(first.get("generated_text") or "").strip()
+    if isinstance(obj, dict):
+        return str(obj.get("generated_text") or "").strip()
+    return ""
 
 
 class RelayHandler(BaseHTTPRequestHandler):
@@ -114,7 +154,11 @@ class RelayHandler(BaseHTTPRequestHandler):
                     prompt = "\n".join(snippets + [f"User: {message}", "Assistant:"])
 
         try:
-            text = _ollama_generate(prompt)
+            model = _local_model()
+            if model.lower().startswith("hf:"):
+                text = _hf_generate(prompt, model=model)
+            else:
+                text = _ollama_generate(prompt, model=model)
         except (URLError, OSError, TimeoutError, ValueError, json.JSONDecodeError):
             text = ""
 

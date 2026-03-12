@@ -191,7 +191,8 @@ def openclaw_generate(
 
 def ollama_fallback_available(timeout_sec: int = 5) -> bool:
     try:
-        return bool(_ollama_generate("Reply with exactly: OK", timeout_sec=timeout_sec))
+        with urllib_request.urlopen("http://127.0.0.1:11434/api/tags", timeout=timeout_sec):
+            return True
     except Exception:
         return False
 

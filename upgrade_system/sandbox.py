@@ -25,6 +25,7 @@ IGNORE_FILE_SUFFIXES = (
     ".bak",
     ".pyc",
     ".log",
+    ".lock",
 )
 
 

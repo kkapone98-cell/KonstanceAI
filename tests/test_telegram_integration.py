@@ -35,6 +35,24 @@ class TelegramIntegrationTests(unittest.TestCase):
                 self.assertIn("Verbosity updated", updated.text)
                 self.assertEqual(app.state.load_prefs()["verbosity"], "short")
 
+    def test_owner_safe_command_policy(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            (root / "data").mkdir()
+            (root / "logs").mkdir()
+            (root / "launcher.py").write_text("print('ok')\n", encoding="utf-8")
+            with patch.dict(
+                "os.environ",
+                {"TELEGRAM_BOT_TOKEN": "123:abc", "OWNER_ID": "99", "KONSTANCE_ROOT": str(root)},
+                clear=False,
+            ):
+                app = KonstanceApplication(load_config(root))
+                blocked = app.handle_user_message(
+                    MessageContext(user_id=99, text="/run del important.txt", is_owner=True)
+                )
+                self.assertIn("Command failed", blocked.text)
+                self.assertTrue(blocked.metadata.get("owner_alert"))
+
     def test_non_owner_cannot_plan_upgrade(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)

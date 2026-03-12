@@ -23,6 +23,9 @@ def build_application(config: AppConfig) -> Application:
     app.add_handler(CommandHandler("rollback", handle_message))
     app.add_handler(CommandHandler("goals", handle_message))
     app.add_handler(CommandHandler("setverbosity", handle_message))
+    app.add_handler(CommandHandler("run", handle_message))
+    app.add_handler(CommandHandler("restart", handle_message))
+    app.add_handler(CommandHandler("startclean", handle_message))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_error_handler(handle_error)
     return app

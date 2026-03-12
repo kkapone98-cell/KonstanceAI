@@ -33,6 +33,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     response = app_service.handle_user_message(_context_from_update(app_service, update, text))
     for message in render_response(response):
         await update.message.reply_text(message[:3900])
+    if response.metadata.get("owner_alert") and app_service.config.has_owner:
+        alert_text = str(response.metadata.get("owner_alert_text") or response.text).strip()
+        try:
+            await context.bot.send_message(chat_id=app_service.config.owner_id, text=alert_text[:3900])
+        except Exception:
+            log.exception("Failed to send owner alert")
 
 
 async def handle_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:

@@ -7,6 +7,7 @@ import subprocess
 import sys
 import time
 import json
+import signal
 from pathlib import Path
 from urllib import request as urllib_request
 
@@ -174,6 +175,57 @@ def ensure_openclaw(config: AppConfig) -> None:
         time.sleep(1)
         if openclaw_available(config, timeout=2):
             break
+
+
+def _read_lock_pid(config: AppConfig) -> int:
+    lock_path = config.data_dir / "bot.lock"
+    if not lock_path.exists():
+        return 0
+    try:
+        raw = lock_path.read_text(encoding="utf-8", errors="ignore").strip()
+    except OSError:
+        return 0
+    if not raw.startswith("pid="):
+        return 0
+    pid_text = raw.split(" ", 1)[0].replace("pid=", "", 1).strip()
+    try:
+        return int(pid_text)
+    except ValueError:
+        return 0
+
+
+def terminate_running_bot(config: AppConfig, timeout_sec: int = 8) -> bool:
+    pid = _read_lock_pid(config)
+    if not pid:
+        return False
+    try:
+        os.kill(pid, signal.SIGTERM)
+    except OSError:
+        return False
+
+    start = time.time()
+    while time.time() - start <= timeout_sec:
+        try:
+            os.kill(pid, 0)
+            time.sleep(0.4)
+        except OSError:
+            break
+    try:
+        (config.data_dir / "bot.lock").unlink(missing_ok=True)
+    except OSError:
+        pass
+    return True
+
+
+def start_clean(config: AppConfig) -> None:
+    terminate_running_bot(config)
+    state = RuntimeState(config)
+    restart_state_path = state.restart_state_path
+    if restart_state_path.exists():
+        restart_state_path.write_text(
+            json.dumps({"window_started_at": 0, "recent_restart_times": [], "quarantined": False}, indent=2),
+            encoding="utf-8",
+        )
 
 
 def run_supervisor(config: AppConfig, entrypoint: Path) -> int:
