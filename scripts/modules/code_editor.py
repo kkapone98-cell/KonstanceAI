@@ -1,18 +1,22 @@
-"""
-scripts/modules/code_editor.py
-Konstance safe self-edit engine. Backup + compile + apply + rollback.
-"""
-import os, shutil, time, py_compile, tempfile, glob
+"""Legacy safe-edit helpers kept for compatibility and manual rollback."""
+
+import glob
+import os
+import py_compile
+import shutil
+import tempfile
+import time
 from pathlib import Path
+
+from self_edit.file_policy import resolve_repo_path, risk_level as governed_risk_level
+
+ROOT = Path(__file__).resolve().parents[2]
 
 HIGH_RISK = {"bot.py", "launcher.py", "main.py"}
 
 
 def risk_level(path) -> str:
-    name = Path(path).name
-    if name in HIGH_RISK: return "high"
-    if "scripts" in Path(path).parts: return "low"
-    return "high"
+    return governed_risk_level(ROOT, path)
 
 
 def backup_file(path) -> Path:
@@ -28,6 +32,8 @@ def list_backups(path) -> list:
 
 
 def compile_check(path) -> tuple:
+    if Path(path).suffix.lower() != ".py":
+        return (True, "")
     try:
         py_compile.compile(str(path), doraise=True)
         return (True, "")
@@ -46,12 +52,13 @@ def compile_check_string(code: str) -> tuple:
 
 
 def apply_patch(path, new_content: str) -> dict:
-    path = Path(path)
+    path = resolve_repo_path(ROOT, path)
     r = {"success": False, "backup_path": None, "error": None, "stage": "init"}
-    r["stage"] = "pre_compile"
-    ok, err = compile_check_string(new_content)
-    if not ok:
-        r["error"] = f"Pre-compile failed: {err}"; return r
+    if path.suffix.lower() == ".py":
+        r["stage"] = "pre_compile"
+        ok, err = compile_check_string(new_content)
+        if not ok:
+            r["error"] = f"Pre-compile failed: {err}"; return r
     r["stage"] = "backup"
     try:
         if path.exists():
@@ -66,20 +73,21 @@ def apply_patch(path, new_content: str) -> dict:
         r["error"] = f"Write failed: {e}"
         if r["backup_path"]: shutil.copy2(r["backup_path"], path)
         return r
-    r["stage"] = "post_compile"
-    ok, err = compile_check(path)
-    if not ok:
-        r["error"] = f"Post-compile failed: {err}"
-        if r["backup_path"]:
-            shutil.copy2(r["backup_path"], path)
-            r["error"] += " — auto-rolled back."
-        return r
+    if path.suffix.lower() == ".py":
+        r["stage"] = "post_compile"
+        ok, err = compile_check(path)
+        if not ok:
+            r["error"] = f"Post-compile failed: {err}"
+            if r["backup_path"]:
+                shutil.copy2(r["backup_path"], path)
+                r["error"] += " — auto-rolled back."
+            return r
     r["success"] = True; r["stage"] = "done"
     return r
 
 
 def rollback(path) -> dict:
-    path = Path(path)
+    path = resolve_repo_path(ROOT, path)
     backups = list_backups(path)
     if not backups:
         return {"success": False, "restored_from": None, "error": f"No backups for {path.name}"}

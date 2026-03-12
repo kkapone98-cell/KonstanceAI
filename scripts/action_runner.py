@@ -1,6 +1,8 @@
-﻿import json, time, pathlib, subprocess
+import json, time, pathlib, subprocess
 
-ROOT = pathlib.Path(r"C:\Users\Thinkpad\Desktop\KonstanceAI")
+from core.config import load_config
+
+ROOT = load_config().root
 DATA = ROOT / "data"
 POLICY = DATA / "action_policy.json"
 JOBS = DATA / "jobs.json"
@@ -8,6 +10,7 @@ LOGS = ROOT / "logs"
 
 SCRIPT_FACTORY = ROOT / "scripts" / "script_factory.py"
 AGENT_RUNTIME = ROOT / "scripts" / "agent_runtime.py"
+PYTHON = load_config().python_executable
 
 LOGS.mkdir(parents=True, exist_ok=True)
 
@@ -73,25 +76,25 @@ def execute_action(action, payload):
     if action == "create_script":
         if "|" not in payload: return False, "Payload format: <name>|<purpose>"
         name, purpose = [x.strip() for x in payload.split("|", 1)]
-        c, out, err = run_cmd(["python", str(SCRIPT_FACTORY), "create", name, purpose])
+        c, out, err = run_cmd([PYTHON, str(SCRIPT_FACTORY), "create", name, purpose])
         return c == 0, out or err
 
     if action == "run_script":
         if "|" not in payload: return False, "Payload format: <name>|<input>"
         name, inp = [x.strip() for x in payload.split("|", 1)]
-        c, out, err = run_cmd(["python", str(SCRIPT_FACTORY), "run", name, inp])
+        c, out, err = run_cmd([PYTHON, str(SCRIPT_FACTORY), "run", name, inp])
         return c == 0, out or err
 
     if action == "create_agent":
         if "|" not in payload: return False, "Payload format: <name>|<purpose>"
         name, purpose = [x.strip() for x in payload.split("|", 1)]
-        c, out, err = run_cmd(["python", str(AGENT_RUNTIME), "create", name, purpose])
+        c, out, err = run_cmd([PYTHON, str(AGENT_RUNTIME), "create", name, purpose])
         return c == 0, out or err
 
     if action == "run_agent":
         if "|" not in payload: return False, "Payload format: <name>|<task>"
         name, task = [x.strip() for x in payload.split("|", 1)]
-        c, out, err = run_cmd(["python", str(AGENT_RUNTIME), "run", name, task])
+        c, out, err = run_cmd([PYTHON, str(AGENT_RUNTIME), "run", name, task])
         return c == 0, out or err
 
     if action == "write_note":

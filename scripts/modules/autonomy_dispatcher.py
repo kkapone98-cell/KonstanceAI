@@ -1,11 +1,14 @@
-﻿import json, pathlib, time, subprocess
+import json, pathlib, time, subprocess
 
-ROOT = pathlib.Path(r"C:\Users\Thinkpad\Desktop\KonstanceAI")
+from core.config import load_config
+
+ROOT = load_config().root
 Q = ROOT / "data" / "autonomy_queue.json"
 LOG = ROOT / "logs" / "autonomy-dispatcher.log"
 
 PROPOSER = ROOT / "scripts" / "improve_proposer.py"
 APPLIER = ROOT / "scripts" / "improve_apply.py"
+PYTHON = load_config().python_executable
 
 
 def log(msg):
@@ -37,16 +40,15 @@ def process_item(x):
     payload = (x.get("payload") or "").strip()
 
     if kind == "improve":
-        rc1, msg1 = run(["python", str(PROPOSER), payload or "improve workflows"])
+        rc1, msg1 = run([PYTHON, str(PROPOSER), payload or "improve workflows"])
         if rc1 != 0:
             return False, f"proposer failed: {msg1[:1200]}"
 
-        # apply low-risk only (policy-controlled in improve_apply.py)
-        rc2, msg2 = run(["python", str(APPLIER)])
+        # Keep the autonomous loop proposal-only; promotion happens through the upgrade pipeline.
+        rc2, msg2 = run([PYTHON, str(APPLIER)])
         if rc2 != 0:
-            # still useful if proposal succeeded
-            return True, f"proposal created; apply pending/manual: {msg2[:1200]}"
-        return True, f"improve complete: {msg2[:1200]}"
+            return True, f"proposal created; awaiting governed promotion: {msg2[:1200]}"
+        return True, f"proposal created; review through Telegram before promotion: {msg2[:1200]}"
 
     return True, f"no-op for kind={kind}"
 

@@ -24,10 +24,15 @@ Write-Host "============================================================" -Foreg
 Write-Host " KonstanceAI Verify & Test  (Root: $Root)" -ForegroundColor White
 Write-Host "============================================================" -ForegroundColor White
 
+$Python = Join-Path $Root ".venv\Scripts\python.exe"
+if (-not (Test-Path $Python)) {
+    $Python = "python"
+}
+
 # CHECK 1: Python version
 Write-Step "CHECK 1 - Python version"
 try {
-    $pyVer = & python --version 2>&1
+    $pyVer = & $Python --version 2>&1
     Write-OK "Python: $pyVer"
 } catch {
     Write-Fail "Python not found in PATH"
@@ -37,7 +42,7 @@ try {
 # CHECK 2: Required packages
 Write-Step "CHECK 2 - Required packages"
 foreach ($pkg in @("telegram", "dotenv", "requests")) {
-    $result = & python -c "import $pkg; print('OK')" 2>&1
+    $result = & $Python -c "import $pkg; print('OK')" 2>&1
     if ("$result" -match "OK") {
         Write-OK "Installed: $pkg"
     } else {
@@ -58,7 +63,7 @@ $projectFiles = @(
 $syntaxFail = $false
 foreach ($f in $projectFiles) {
     if (Test-Path $f) {
-        $out = & python -m py_compile $f 2>&1
+        $out = & $Python -m py_compile $f 2>&1
         if ($LASTEXITCODE -ne 0) {
             Write-Fail "SYNTAX ERROR: $(Split-Path $f -Leaf) - $out"
             $syntaxFail = $true
@@ -78,6 +83,18 @@ $envHasToken = $false
 if (Test-Path $envFile) {
     $envContent = Get-Content $envFile -Raw
     if ($envContent -match "TELEGRAM_BOT_TOKEN=\S+") { $envHasToken = $true }
+}
+
+# CHECK 4B: Launcher preflight
+Write-Step "CHECK 4B - Launcher preflight"
+Push-Location $Root
+$preflightOut = & $Python launcher\preflight.py 2>&1
+Pop-Location
+if ($LASTEXITCODE -eq 0) {
+    Write-OK "Launcher preflight passed"
+} else {
+    Write-Warn "Launcher preflight reported issues:"
+    $preflightOut | ForEach-Object { Write-Host "    $_" -ForegroundColor Yellow }
 }
 $fileHasToken = Test-Path $tokenFile
 if ($envHasToken -or $fileHasToken) {
@@ -142,7 +159,7 @@ Write-Step "CHECK 9 - Unit tests"
 $testsDir = "$Root\tests"
 if (Test-Path $testsDir) {
     Push-Location $Root
-    $testOut = & python -m unittest discover -s tests -v 2>&1
+    $testOut = & $Python -m unittest discover -s tests -v 2>&1
     Pop-Location
     if ($LASTEXITCODE -eq 0) {
         Write-OK "All tests passed"
@@ -176,6 +193,6 @@ if (-not $syntaxFail) {
 }
 Write-Host "============================================================" -ForegroundColor White
 Write-Host ""
-Write-Host "  Start bot: python launcher.py" -ForegroundColor Gray
-Write-Host "  Run tests: python -m unittest discover -s tests -v" -ForegroundColor Gray
+Write-Host "  Start bot: $Python launcher.py" -ForegroundColor Gray
+Write-Host "  Run tests: $Python -m unittest discover -s tests -v" -ForegroundColor Gray
 Write-Host ""

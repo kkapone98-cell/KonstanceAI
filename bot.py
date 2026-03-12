@@ -1,47 +1,55 @@
-import json
+"""Telegram runtime entrypoint for KonstanceAI."""
+
+from __future__ import annotations
+
 import logging
 import os
 import sys
 import time
 from pathlib import Path
 
-from dotenv import load_dotenv
-from telegram import Update
-from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
-
-from scripts.modules.smart_reply_engine import (
-    ollama_fallback_available,
-    openclaw_generate,
-    relay_available,
-    smart_reply,
-)
-from scripts.modules.self_model import build_self_context
-from scripts.modules.autonomous_loop import maybe_handle_code_after_reply, handle_natural_approval
+from core.config import load_config
+from core.state import RuntimeState
+from konstance_telegram.adapter import build_application
+from scripts.modules.smart_reply_engine import ollama_fallback_available, relay_available
 
 ROOT = Path(os.getenv("KONSTANCE_ROOT", Path(__file__).resolve().parent)).resolve()
-load_dotenv(ROOT / ".env")
-OWNER_ID = int((os.getenv("OWNER_ID") or "0").strip() or "0")
-
-DATA_DIR = ROOT / "data"
-LOGS_DIR = ROOT / "logs"
-DATA_DIR.mkdir(parents=True, exist_ok=True)
-LOGS_DIR.mkdir(parents=True, exist_ok=True)
-
-PREFS_FILE = DATA_DIR / "prefs.json"
-PROFILE_FILE = DATA_DIR / "profile.json"
-HEALTH_FILE = DATA_DIR / "health.json"
-LOG_FILE = LOGS_DIR / "bot.log"
+CONFIG = load_config(ROOT)
+LOG_FILE = CONFIG.logs_dir / "bot.log"
 
 
 class BotLockError(RuntimeError):
-    pass
+    """Raised when another polling instance already owns the bot lock."""
+
+
+def _load_token() -> str:
+    return load_config(ROOT).token
+
+
+def _setup_logging() -> logging.Logger:
+    CONFIG.ensure_runtime_dirs()
+    logger = logging.getLogger("konstance.bot")
+    logger.setLevel(logging.INFO)
+    logger.handlers.clear()
+
+    formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
+    file_handler = logging.FileHandler(LOG_FILE, encoding="utf-8")
+    file_handler.setFormatter(formatter)
+    stream_handler = logging.StreamHandler(sys.stdout)
+    stream_handler.setFormatter(formatter)
+
+    logger.addHandler(file_handler)
+    logger.addHandler(stream_handler)
+    return logger
+
+
+log = _setup_logging()
 
 
 def _acquire_single_instance_lock() -> object:
-    lock_path = DATA_DIR / "bot.lock"
+    lock_path = CONFIG.data_dir / "bot.lock"
     lock_path.parent.mkdir(parents=True, exist_ok=True)
     handle = open(lock_path, "a+", encoding="utf-8")
-
     try:
         if os.name == "nt":
             import msvcrt
@@ -51,9 +59,9 @@ def _acquire_single_instance_lock() -> object:
             import fcntl
 
             fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
-    except Exception:
+    except Exception as exc:
         handle.close()
-        raise BotLockError("Another bot instance is already running.")
+        raise BotLockError("Another bot instance is already running.") from exc
 
     handle.seek(0)
     handle.truncate(0)
@@ -62,156 +70,18 @@ def _acquire_single_instance_lock() -> object:
     return handle
 
 
-def _setup_logging() -> logging.Logger:
-    logger = logging.getLogger("konstance.bot")
-    logger.setLevel(logging.INFO)
-    logger.handlers.clear()
-
-    fmt = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
-    fh = logging.FileHandler(LOG_FILE, encoding="utf-8")
-    fh.setFormatter(fmt)
-    ch = logging.StreamHandler(sys.stdout)
-    ch.setFormatter(fmt)
-
-    logger.addHandler(fh)
-    logger.addHandler(ch)
-    return logger
-
-
-log = _setup_logging()
-
-
-def _load_json(path: Path, fallback):
-    if not path.exists():
-        return fallback
-    try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except Exception:
-        return fallback
-
-
-def _save_json(path: Path, payload) -> None:
-    path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
-
-
-def _load_token() -> str:
-    load_dotenv(ROOT / ".env")
-    token = (os.getenv("TELEGRAM_BOT_TOKEN") or "").strip()
-    if token:
-        return token
-    token_file = ROOT / "telegram_token.txt"
-    if token_file.exists():
-        return token_file.read_text(encoding="utf-8").strip()
-    return ""
-
-
-MEMORY_FILE = DATA_DIR / "memory.json"
-MAX_MEMORY = 30
-
-def _load_memory() -> list:
-    m = _load_json(MEMORY_FILE, {"conversations": []})
-    return m.get("conversations", [])
-
-def _save_memory(conversations: list) -> None:
-    _save_json(MEMORY_FILE, {"conversations": conversations[-MAX_MEMORY:]})
-
-def _touch_health(**kwargs) -> None:
-    health = _load_json(
-        HEALTH_FILE,
-        {"last_start": 0, "last_message": 0, "relay_available": False, "ollama_available": False},
-    )
-    health.update(kwargs)
-    _save_json(HEALTH_FILE, health)
-
-
-def _owner_only(update: Update) -> bool:
-    owner_id = (os.getenv("OWNER_ID") or "").strip()
-    if not owner_id:
-        return True
-    user = update.effective_user
-    return bool(user and str(user.id) == owner_id)
-
-
-async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("KonstanceAI online ✅")
-
-
-async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    prefs = _load_json(PREFS_FILE, {"verbosity": "medium"})
-    await update.message.reply_text(
-        "\n".join(
-            [
-                "Status: running",
-                f"Root: {ROOT}",
-                f"Relay available: {relay_available()}",
-                f"Ollama available: {ollama_fallback_available()}",
-                f"Verbosity: {prefs.get('verbosity', 'medium')}",
-            ]
-        )
-    )
-
-
-async def cmd_health(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(json.dumps(_load_json(HEALTH_FILE, {}), indent=2))
-
-
-async def cmd_cloudtest(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    prefs = _load_json(PREFS_FILE, {"verbosity": "medium"})
-    profile = _load_json(PROFILE_FILE, {"name": "Konstance"})
-    out = openclaw_generate("Reply exactly CLOUD_OK", prefs, profile, timeout_sec=20)
-    await update.message.reply_text("Cloud test: OK" if out else "Cloud test: FAILED")
-
-
-async def cmd_setverbosity(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not _owner_only(update):
-        await update.message.reply_text("Not authorized.")
-        return
-
-    if not context.args or context.args[0] not in {"short", "medium", "long"}:
-        await update.message.reply_text("Usage: /setverbosity <short|medium|long>")
-        return
-
-    prefs = _load_json(PREFS_FILE, {"verbosity": "medium"})
-    prefs["verbosity"] = context.args[0]
-    _save_json(PREFS_FILE, prefs)
-    await update.message.reply_text(f"Verbosity updated: {prefs['verbosity']}")
-
-
-async def on_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = (update.message.text or "").strip()
-    if not text:
-        return
-
-    _touch_health(last_message=int(time.time()))
-
-    if await handle_natural_approval(update, context, text, OWNER_ID):
-        history = _load_memory()
-        history.append({"user": text, "bot": "[Applied draft via natural approval]", "ts": int(time.time())})
-        _save_memory(history)
-        return
-
-    prefs = _load_json(PREFS_FILE, {"verbosity": "medium"})
-    profile = _load_json(PROFILE_FILE, {"name": "Konstance"})
-
-    history = _load_memory()
-    try:
-        self_ctx = build_self_context()
-    except Exception:
-        self_ctx = ""
-    reply = smart_reply(text, prefs, profile, history, self_context=self_ctx or None)
-    history.append({"user": text, "bot": reply, "ts": int(time.time())})
-    _save_memory(history)
-    await update.message.reply_text(reply[:3900])
-    await maybe_handle_code_after_reply(update, context, text, OWNER_ID)
-
-
 def main() -> int:
     token = _load_token()
     if not token or ":" not in token:
         log.error("Missing TELEGRAM_BOT_TOKEN in .env or telegram_token.txt")
         return 1
+    if not CONFIG.has_owner:
+        log.error("Missing OWNER_ID in .env")
+        return 1
 
-    _touch_health(
+    state = RuntimeState(CONFIG)
+    state.ensure()
+    state.update_health(
         last_start=int(time.time()),
         relay_available=relay_available(),
         ollama_available=ollama_fallback_available(),
@@ -219,208 +89,18 @@ def main() -> int:
 
     try:
         lock_handle = _acquire_single_instance_lock()
-    except BotLockError as e:
-        log.error(str(e))
+    except BotLockError as exc:
+        log.error(str(exc))
         return 11
 
-    app = Application.builder().token(token).build()
-    app.add_handler(CommandHandler("start", cmd_start))
-    app.add_handler(CommandHandler("status", cmd_status))
-    app.add_handler(CommandHandler("health", cmd_health))
-    app.add_handler(CommandHandler("cloudtest", cmd_cloudtest))
-    app.add_handler(CommandHandler("setverbosity", cmd_setverbosity))
-    app.add_handler(CommandHandler("drafts", cmd_drafts))
-    app.add_handler(CommandHandler("approve", cmd_approve))
-    app.add_handler(CommandHandler("reject", cmd_reject))
-    app.add_handler(CommandHandler("rollback", cmd_rollback_file))
-    app.add_handler(CommandHandler("goals", cmd_goals))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, on_text))
-
+    app = build_application(CONFIG)
     log.info("Bot starting polling.")
     try:
         app.run_polling(drop_pending_updates=True)
     finally:
-        # keep lock referenced for process lifetime; close only on shutdown
         lock_handle.close()
-
     return 0
 
 
-
-# ════════════════════════════════════════════════════════════
-# SELF-EDIT FEATURE — auto-added by install_self_edit.py
-# ════════════════════════════════════════════════════════════
-import json, uuid, re as _re
-from pathlib import Path as _Path
-from scripts.modules.code_editor import (
-    apply_patch, rollback, list_backups, backup_file, compile_check_string
-)
-from scripts.modules.intent_router import parse_code_request
-
-_PENDING = _Path("data/pending_edits.json")
-
-def _load_drafts():
-    try:
-        if _PENDING.exists(): return json.loads(_PENDING.read_text(encoding="utf-8"))
-    except Exception: pass
-    return {"drafts": {}}
-
-def _save_drafts(d):
-    _PENDING.parent.mkdir(parents=True, exist_ok=True)
-    _PENDING.write_text(json.dumps(d, indent=2), encoding="utf-8")
-
-def _store_draft(uid, target, content, desc, bak):
-    d = _load_drafts()
-    did = str(uuid.uuid4())[:8]
-    d["drafts"][did] = {"user_id":uid,"target":target,"new_content":content,
-                        "description":desc,"created_at":int(__import__("time").time()),"backup_path":bak}
-    _save_drafts(d); return did
-
-async def cmd_drafts(update, context):
-    if update.effective_user.id != OWNER_ID: return
-    d = _load_drafts()["drafts"]
-    if not d: await update.message.reply_text("📋 No pending drafts."); return
-    lines = ["📋 *Pending Drafts:*\n"]
-    for did, v in d.items():
-        lines.append(f"• `{did}` — `{v['target']}` — _{v['description']}_\n  /approve {did}  |  /reject {did}")
-    await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
-
-async def cmd_approve(update, context):
-    if update.effective_user.id != OWNER_ID: return
-    if not context.args: await update.message.reply_text("Usage: /approve <id>"); return
-    did = context.args[0]; d = _load_drafts()
-    draft = d["drafts"].get(did)
-    if not draft: await update.message.reply_text(f"❌ Draft `{did}` not found.", parse_mode="Markdown"); return
-    await update.message.reply_text(f"⚙️ Applying `{did}`...", parse_mode="Markdown")
-    r = apply_patch(_Path(draft["target"]), draft["new_content"])
-    if r["success"]:
-        del d["drafts"][did]; _save_drafts(d)
-        bak = _Path(r["backup_path"]).name if r["backup_path"] else "none"
-        await update.message.reply_text(f"✅ Applied!\nBackup: `{bak}`", parse_mode="Markdown")
-    else:
-        await update.message.reply_text(f"❌ Failed at `{r['stage']}`: {r['error']}", parse_mode="Markdown")
-
-async def cmd_reject(update, context):
-    if update.effective_user.id != OWNER_ID: return
-    if not context.args: await update.message.reply_text("Usage: /reject <id>"); return
-    did = context.args[0]; d = _load_drafts()
-    if did not in d["drafts"]: await update.message.reply_text(f"❌ Draft `{did}` not found.", parse_mode="Markdown"); return
-    desc = d["drafts"][did]["description"]; del d["drafts"][did]; _save_drafts(d)
-    await update.message.reply_text(f"🗑️ Draft `{did}` rejected.\n_{desc}_", parse_mode="Markdown")
-
-async def cmd_rollback_file(update, context):
-    if update.effective_user.id != OWNER_ID: return
-    if not context.args: await update.message.reply_text("Usage: /rollback <filename>"); return
-    fname = context.args[0]
-    for p in [_Path(fname), _Path("scripts/modules") / fname]:
-        if p.exists() or list_backups(p):
-            r = rollback(p)
-            if r["success"]: await update.message.reply_text(f"✅ Rolled back `{fname}` from `{_Path(r['restored_from']).name}`", parse_mode="Markdown")
-            else: await update.message.reply_text(f"❌ Rollback failed: {r['error']}")
-            return
-    await update.message.reply_text(f"❌ No backups found for `{fname}`", parse_mode="Markdown")
-
-# SELF-EDIT FEATURE END
-# ════════════════════════════════════════════════════════════
-
-
-# ════════════════════════════════════════════════════════════════════════════
-# KONSTANCE AUTONOMOUS SYSTEM — auto-patched by install_autonomous.py
-# ════════════════════════════════════════════════════════════════════════════
-import json as _json, re as _re
-from pathlib import Path as _Path
-from scripts.modules.self_model import build_self_context as _build_self_ctx, refresh as _refresh_self
-from scripts.modules.code_editor import apply_patch as _apply_patch, list_backups as _list_backups, backup_file as _backup_file, compile_check_string as _compile_check_string
-from scripts.modules.intent_router import parse_code_request as _parse_intent
-from scripts.modules.goal_engine import goals_summary as _goals_summary, on_capability_added as _on_cap_added
-from scripts.modules.autonomous_loop import (
-    handle_code_request as _handle_code_req,
-    store_draft as _store_draft, get_draft as _get_draft,
-    delete_draft as _delete_draft, list_drafts as _list_drafts,
-    build_status_report as _build_status
-)
-
-# Inject self-model into every LLM prompt — do this ONCE at import time
-try:
-    _SELF_CTX = _build_self_ctx()
-except Exception:
-    _SELF_CTX = ""
-
-
-async def cmd_drafts(update, context):
-    if update.effective_user.id != OWNER_ID: return
-    drafts = _list_drafts()
-    if not drafts:
-        await update.message.reply_text("📋 No pending drafts."); return
-    lines = ["📋 *Pending Drafts:*\n"]
-    for did, v in drafts.items():
-        ts = __import__("time").strftime("%H:%M %d/%m", __import__("time").localtime(v["created_at"]))
-        lines.append(f"• `{did}` — `{v['target']}` — _{v['description']}_\n  {ts} — /approve {did} | /reject {did}")
-    await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
-
-
-async def cmd_approve(update, context):
-    if update.effective_user.id != OWNER_ID: return
-    if not context.args:
-        await update.message.reply_text("Usage: /approve <draft_id>"); return
-    did = context.args[0].strip()
-    draft = _get_draft(did)
-    if not draft:
-        await update.message.reply_text(f"❌ Draft `{did}` not found.", parse_mode="Markdown"); return
-    await update.message.reply_text(f"⚙️ Applying `{did}`...", parse_mode="Markdown")
-    r = _apply_patch(_Path(draft["target"]), draft["new_content"])
-    if r["success"]:
-        _delete_draft(did)
-        bak = _Path(r["backup_path"]).name if r["backup_path"] else "none"
-        await update.message.reply_text(f"✅ Applied!\nBackup: `{bak}`", parse_mode="Markdown")
-        _refresh_self()
-        next_goal = _on_cap_added(draft["description"], draft["target"])
-        if next_goal:
-            await update.message.reply_text(f"🎯 *Next goal:* _{next_goal}_", parse_mode="Markdown")
-    else:
-        await update.message.reply_text(f"❌ Failed at `{r['stage']}`: {r['error']}", parse_mode="Markdown")
-
-
-async def cmd_reject(update, context):
-    if update.effective_user.id != OWNER_ID: return
-    if not context.args:
-        await update.message.reply_text("Usage: /reject <draft_id>"); return
-    did = context.args[0].strip()
-    draft = _get_draft(did)
-    if not draft:
-        await update.message.reply_text(f"❌ Draft `{did}` not found.", parse_mode="Markdown"); return
-    _delete_draft(did)
-    await update.message.reply_text(f"🗑️ Draft `{did}` rejected.", parse_mode="Markdown")
-
-
-async def cmd_rollback_file(update, context):
-    if update.effective_user.id != OWNER_ID: return
-    if not context.args:
-        await update.message.reply_text("Usage: /rollback <filename>\nExample: /rollback bot.py"); return
-    fname = context.args[0].strip()
-    from scripts.modules.code_editor import rollback as _do_rollback
-    for p in [_Path(fname), _Path("scripts/modules") / fname]:
-        if p.exists() or _list_backups(p):
-            r = _do_rollback(p)
-            if r["success"]:
-                await update.message.reply_text(f"✅ Rolled back `{fname}` from `{_Path(r['restored_from']).name}`", parse_mode="Markdown")
-            else:
-                await update.message.reply_text(f"❌ {r['error']}")
-            return
-    await update.message.reply_text(f"❌ No backups found for `{fname}`", parse_mode="Markdown")
-
-
-async def cmd_goals(update, context):
-    if update.effective_user.id != OWNER_ID: return
-    await update.message.reply_text(_goals_summary(), parse_mode="Markdown")
-
-
-async def cmd_status(update, context):
-    if update.effective_user.id != OWNER_ID: return
-    await update.message.reply_text(_build_status(), parse_mode="Markdown")
-
-# KONSTANCE AUTONOMOUS SYSTEM END
-# ════════════════════════════════════════════════════════════════════════════
-
 if __name__ == "__main__":
-    sys.exit(main())
+    raise SystemExit(main())
