@@ -1,6 +1,15 @@
 KONSTANCE MASTER RECAP + GOALS
 Generated: 2026-03-11
 
+LATEST UPDATE (2026-03-12)
+- Natural-language draft approval is live: reply "yes", "approve", or "go ahead" to apply staged drafts.
+- Bot now handles natural approval before normal reply flow (no slash command required for approval).
+- OpenClaw relay path hardened: default local relay URL and retry before fallback.
+- Fallback response now clearly states AI connectivity issue and recovery step (`ollama serve`).
+- Memory retention increased to last 30 exchanges.
+- Startup reliability improved with one-click `START_KONSTANCE.cmd` and dynamic-root startup scripts.
+- Core startup scripts now avoid hardcoded absolute paths and work from current repo path.
+
 ==================================================
 1) VISION (END STATE)
 ==================================================

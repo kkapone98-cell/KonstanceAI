@@ -2,7 +2,7 @@ import os, json, time, pathlib
 from urllib import request
 from dotenv import load_dotenv
 
-ROOT = pathlib.Path(r"C:\Users\Thinkpad\Desktop\KonstanceAI")
+ROOT = pathlib.Path(__file__).resolve().parents[1]
 OUT = ROOT / "data" / "cloud_status.json"
 
 
@@ -23,7 +23,7 @@ def _relay_http_url():
 
 
 def probe():
-    load_dotenv()
+    load_dotenv(ROOT / ".env")
     raw_url = (os.getenv("OPENCLAW_RELAY_URL") or "").strip()
     url = _relay_http_url() or raw_url
     token = (os.getenv("OPENCLAW_RELAY_TOKEN") or "").strip()

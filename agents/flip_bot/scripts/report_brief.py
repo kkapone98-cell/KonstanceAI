@@ -1,4 +1,4 @@
-﻿import json, pathlib
+mport json, pathlib
 
 ROOT = pathlib.Path(r"C:\Users\Thinkpad\Desktop\KonstanceAI\agents\flip_bot")
 REP = ROOT / "output" / "daily_report.json"

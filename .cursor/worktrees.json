@@ -1,0 +1,5 @@
+h{
+  "setup-worktree": [
+    "npm install"
+  ]
+}

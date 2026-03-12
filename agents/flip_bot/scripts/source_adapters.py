@@ -1,4 +1,4 @@
-﻿import json, pathlib, time, argparse
+mport json, pathlib, time, argparse
 from urllib import request
 import xml.etree.ElementTree as ET
 

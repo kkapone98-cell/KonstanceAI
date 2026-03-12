@@ -1,3 +1,3 @@
-﻿$ROOT = "C:\Users\Thinkpad\Desktop\KonstanceAI"
+$ROOT = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 Set-Location -LiteralPath $ROOT
-python "$ROOT\bot.py"
+python "$ROOT\launcher.py"

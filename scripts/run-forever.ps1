@@ -1,6 +1,6 @@
-﻿$ROOT = "C:\Users\Thinkpad\Desktop\KonstanceAI"
+$ROOT = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 Set-Location -LiteralPath $ROOT
 while ($true) {
-  python "$ROOT\bot.py"
+  python "$ROOT\launcher.py"
   Start-Sleep -Seconds 3
 }

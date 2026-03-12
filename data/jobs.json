@@ -73,9 +73,9 @@
       "payload": "scout|Research opportunities for: Build a Craigslist-to-eBay flip workflow",
       "requested_by": "autoplan",
       "tier": "auto_allow",
-      "status": "queued",
-      "result": "",
-      "completed_at": null
+      "status": "failed",
+      "result": "Agent already exists",
+      "completed_at": 1773330425
     },
     {
       "id": "job_1773267191",
@@ -84,9 +84,9 @@
       "payload": "starter|Starter script for: Build a Craigslist-to-eBay flip workflow",
       "requested_by": "autoplan",
       "tier": "auto_allow",
-      "status": "queued",
-      "result": "",
-      "completed_at": null
+      "status": "failed",
+      "result": "Script already exists: starter.py",
+      "completed_at": 1773330425
     },
     {
       "id": "job_1773267191",
@@ -95,9 +95,9 @@
       "payload": "scout|Find 5 actionable ideas for: Build a Craigslist-to-eBay flip workflow",
       "requested_by": "autoplan",
       "tier": "auto_allow",
-      "status": "queued",
-      "result": "",
-      "completed_at": null
+      "status": "failed",
+      "result": "Run failed: timed out",
+      "completed_at": 1773330546
     },
     {
       "id": "job_1773267192",
@@ -106,9 +106,9 @@
       "payload": "starter|first run for: Build a Craigslist-to-eBay flip workflow",
       "requested_by": "autoplan",
       "tier": "auto_allow",
-      "status": "queued",
-      "result": "",
-      "completed_at": null
+      "status": "failed",
+      "result": "Script not found: starter",
+      "completed_at": 1773330546
     }
   ]
 }

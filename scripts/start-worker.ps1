@@ -1,3 +1,3 @@
-﻿$ROOT = "C:\Users\Thinkpad\Desktop\KonstanceAI"
+$ROOT = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 Set-Location -LiteralPath $ROOT
-python "$ROOT\scripts\job_worker.py"
+python -m scripts.job_worker

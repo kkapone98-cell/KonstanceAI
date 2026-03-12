@@ -1,7 +1,7 @@
-﻿import json, time, pathlib, traceback
+import json, time, pathlib, traceback
 from scripts.action_runner import execute_action
 
-ROOT = pathlib.Path(r"C:\Users\Thinkpad\Desktop\KonstanceAI")
+ROOT = pathlib.Path(__file__).resolve().parents[1]
 JOBS = ROOT / "data" / "jobs.json"
 LOG = ROOT / "logs" / "job-worker.log"
 SLEEP_SEC = 4

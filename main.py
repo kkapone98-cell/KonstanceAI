@@ -1,3 +1,7 @@
+# LEGACY_GUARD_ADDED
+import sys
+print('ERROR: main.py is legacy. Run: python launcher.py')
+sys.exit(1)
 
 import subprocess
 import sys

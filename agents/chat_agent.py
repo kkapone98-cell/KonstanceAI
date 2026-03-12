@@ -1,4 +1,4 @@
-import subprocess, json, pathlib
+mport subprocess, json, pathlib
 MEM_CONV = pathlib.Path(r'C:\Users\Thinkpad\Desktop\KonstanceAI\memory\conversations.json')
 def run_task(task):
     try:

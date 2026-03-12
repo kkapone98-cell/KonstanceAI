@@ -1,4 +1,4 @@
-from pathlib import Path
+rom pathlib import Path
 from tools.openclaw_manager import edit_file_openclaw
 import json, time
 SCRIPTS_DIR = Path(r'C:\Users\Thinkpad\Desktop\KonstanceAI\scripts')
