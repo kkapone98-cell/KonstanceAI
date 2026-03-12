@@ -138,15 +138,39 @@ def ensure_openclaw(config: AppConfig) -> None:
     if not config.openclaw_cmd or available:
         return
     flags = CREATE_NO_WINDOW if sys.platform == "win32" else 0
-    subprocess.Popen(
-        config.openclaw_cmd,
-        cwd=config.openclaw_cwd or str(config.root),
-        env=os.environ.copy(),
-        creationflags=flags,
-        shell=True,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
+    cwd = Path(config.openclaw_cwd or config.root)
+    if not cwd.is_absolute():
+        cwd = (config.root / cwd).resolve()
+    if not cwd.exists():
+        cwd.mkdir(parents=True, exist_ok=True)
+    if not cwd.is_dir():
+        cwd = config.root
+    try:
+        subprocess.Popen(
+            config.openclaw_cmd,
+            cwd=str(cwd),
+            env=os.environ.copy(),
+            creationflags=flags,
+            shell=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    except OSError as exc:
+        _debug_log(
+            config,
+            run_id="post-fix",
+            hypothesis_id="H3",
+            location="launcher/service_manager.py:ensure_openclaw",
+            message="ensure_openclaw_spawn_failed",
+            data={"error_type": type(exc).__name__, "cwd": str(cwd)},
+        )
+        return
+
+    # Give the relay a short warmup window so /status can report healthy quickly.
+    for _ in range(20):
+        time.sleep(1)
+        if openclaw_available(config, timeout=2):
+            break
 
 
 def run_supervisor(config: AppConfig, entrypoint: Path) -> int:
@@ -166,8 +190,8 @@ def run_supervisor(config: AppConfig, entrypoint: Path) -> int:
         if code == 0:
             return 0
         if code == 11:
-            time.sleep(10)
-            continue
+            print("Bot instance conflict detected (code 11). Another instance may already be polling Telegram.")
+            return 11
 
         restart_count += 1
         restart_state = record_restart(state)

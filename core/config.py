@@ -26,6 +26,16 @@ def _pick_python(root: Path) -> str:
     return sys.executable
 
 
+def _normalize_optional_path(raw: str, root: Path) -> str:
+    value = (raw or "").strip().strip('"').strip("'")
+    if not value:
+        return ""
+    path = Path(os.path.expandvars(os.path.expanduser(value)))
+    if not path.is_absolute():
+        path = (root / path).resolve()
+    return str(path)
+
+
 @dataclass(slots=True)
 class AppConfig:
     root: Path
@@ -84,7 +94,7 @@ def load_config(root: str | Path | None = None) -> AppConfig:
         openclaw_relay_url=(os.getenv("OPENCLAW_RELAY_URL") or "").strip(),
         openclaw_relay_token=(os.getenv("OPENCLAW_RELAY_TOKEN") or "").strip(),
         openclaw_cmd=(os.getenv("OPENCLAW_CMD") or "").strip(),
-        openclaw_cwd=(os.getenv("OPENCLAW_CWD") or "").strip(),
+        openclaw_cwd=_normalize_optional_path((os.getenv("OPENCLAW_CWD") or "").strip(), project_root),
         ollama_model=model,
     )
     config.ensure_runtime_dirs()

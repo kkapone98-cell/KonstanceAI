@@ -6,7 +6,7 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters
 
 from core.application import KonstanceApplication
 from core.config import AppConfig
-from konstance_telegram.handlers import handle_message, handle_start
+from konstance_telegram.handlers import handle_error, handle_message, handle_start
 
 
 def build_application(config: AppConfig) -> Application:
@@ -24,5 +24,6 @@ def build_application(config: AppConfig) -> Application:
     app.add_handler(CommandHandler("goals", handle_message))
     app.add_handler(CommandHandler("setverbosity", handle_message))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    app.add_error_handler(handle_error)
     return app
 

@@ -19,7 +19,11 @@ def run_forever() -> int:
         return 1
 
     print("Starting KonstanceAI bot...")
-    return run_supervisor(config, Path(config.root) / "bot.py")
+    code = run_supervisor(config, Path(config.root) / "bot.py")
+    if code == 11:
+        print("KonstanceAI is already running. Reusing existing bot instance.")
+        return 0
+    return code
 
 
 if __name__ == "__main__":

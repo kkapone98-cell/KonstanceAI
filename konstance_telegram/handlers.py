@@ -2,12 +2,17 @@
 
 from __future__ import annotations
 
+import logging
+
 from telegram import Update
+from telegram.error import Conflict
 from telegram.ext import ContextTypes
 
 from core.application import KonstanceApplication
 from core.contracts import MessageContext
 from konstance_telegram.renderers import render_response
+
+log = logging.getLogger("konstance.bot")
 
 
 def _context_from_update(app: KonstanceApplication, update: Update, text: str) -> MessageContext:
@@ -32,4 +37,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
 async def handle_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await handle_message(update, context)
+
+
+async def handle_error(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if isinstance(context.error, Conflict):
+        log.error("Telegram polling conflict detected; stopping this instance.")
+        context.application.bot_data["telegram_conflict"] = True
+        await context.application.stop()
+        return
+    # Keep non-conflict diagnostics in bot.log.
+    log.exception("Telegram handler error", exc_info=context.error)
 

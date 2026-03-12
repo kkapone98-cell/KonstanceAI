@@ -8,6 +8,8 @@ import sys
 import time
 from pathlib import Path
 
+from telegram.error import Conflict
+
 from core.config import load_config
 from core.state import RuntimeState
 from konstance_telegram.adapter import build_application
@@ -54,6 +56,8 @@ def _acquire_single_instance_lock() -> object:
         if os.name == "nt":
             import msvcrt
 
+            # Lock the first byte consistently; locking at EOF can allow duplicates.
+            handle.seek(0)
             msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
         else:
             import fcntl
@@ -63,10 +67,15 @@ def _acquire_single_instance_lock() -> object:
         handle.close()
         raise BotLockError("Another bot instance is already running.") from exc
 
-    handle.seek(0)
-    handle.truncate(0)
-    handle.write(f"pid={os.getpid()} started={int(time.time())}\n")
-    handle.flush()
+    try:
+        handle.seek(0)
+        handle.truncate(0)
+        handle.write(f"pid={os.getpid()} started={int(time.time())}\n")
+        handle.flush()
+    except OSError:
+        # On Windows, byte-range locking can reject writes to the same file region.
+        # Lock ownership is the authoritative singleton signal; metadata is optional.
+        pass
     return handle
 
 
@@ -90,13 +99,18 @@ def main() -> int:
     try:
         lock_handle = _acquire_single_instance_lock()
     except BotLockError as exc:
-        log.error(str(exc))
+        log.info(str(exc))
         return 11
 
     app = build_application(CONFIG)
     log.info("Bot starting polling.")
     try:
         app.run_polling(drop_pending_updates=True)
+        if app.bot_data.get("telegram_conflict"):
+            return 11
+    except Conflict:
+        log.error("Telegram polling conflict detected. Another getUpdates consumer is active.")
+        return 11
     finally:
         lock_handle.close()
     return 0
