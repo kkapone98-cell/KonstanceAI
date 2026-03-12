@@ -141,9 +141,12 @@ def ensure_openclaw(config: AppConfig) -> None:
     cwd = Path(config.openclaw_cwd or config.root)
     if not cwd.is_absolute():
         cwd = (config.root / cwd).resolve()
-    if not cwd.exists():
-        cwd.mkdir(parents=True, exist_ok=True)
-    if not cwd.is_dir():
+    try:
+        if not cwd.exists():
+            cwd.mkdir(parents=True, exist_ok=True)
+        if not cwd.is_dir():
+            cwd = config.root
+    except OSError:
         cwd = config.root
     try:
         subprocess.Popen(
@@ -183,6 +186,9 @@ def run_supervisor(config: AppConfig, entrypoint: Path) -> int:
 
     ensure_openclaw(config)
     restart_count = 0
+    if not entrypoint.exists():
+        print(f"ERROR: Bot entrypoint missing: {entrypoint}")
+        return 1
     while True:
         proc = subprocess.Popen([config.python_executable, str(entrypoint)], cwd=str(config.root), env=os.environ.copy())
         code = proc.wait()
@@ -190,7 +196,7 @@ def run_supervisor(config: AppConfig, entrypoint: Path) -> int:
         if code == 0:
             return 0
         if code == 11:
-            print("Bot instance conflict detected (code 11). Another instance may already be polling Telegram.")
+            print("INFO: Existing bot instance detected (code 11). Reusing active poller.")
             return 11
 
         restart_count += 1

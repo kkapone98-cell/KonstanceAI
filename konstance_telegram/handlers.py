@@ -41,7 +41,7 @@ async def handle_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
 async def handle_error(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
     if isinstance(context.error, Conflict):
-        log.error("Telegram polling conflict detected; stopping this instance.")
+        log.info("Telegram polling conflict detected; stopping this instance.")
         context.application.bot_data["telegram_conflict"] = True
         await context.application.stop()
         return

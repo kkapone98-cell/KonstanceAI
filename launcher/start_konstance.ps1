@@ -15,10 +15,22 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
-Start-Process powershell -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$ROOT\scripts\run-forever.ps1`"" -WindowStyle Normal | Out-Null
+Start-Process powershell -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$ROOT\scripts\start-clean.ps1`"" -WindowStyle Normal | Out-Null
 Start-Sleep -Seconds 1
-Start-Process powershell -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$ROOT\scripts\start-worker.ps1`"" -WindowStyle Minimized | Out-Null
+
+$existingWorker = Get-CimInstance Win32_Process | Where-Object {
+    $_.Name -ieq "powershell.exe" -and $_.CommandLine -and $_.CommandLine.Contains("$ROOT\scripts\start-worker.ps1")
+} | Select-Object -First 1
+if (-not $existingWorker) {
+    Start-Process powershell -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$ROOT\scripts\start-worker.ps1`"" -WindowStyle Minimized | Out-Null
+}
 Start-Sleep -Seconds 1
-Start-Process powershell -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$ROOT\scripts\start-cloud-monitor.ps1`"" -WindowStyle Minimized | Out-Null
+
+$existingCloud = Get-CimInstance Win32_Process | Where-Object {
+    $_.Name -ieq "powershell.exe" -and $_.CommandLine -and $_.CommandLine.Contains("$ROOT\scripts\start-cloud-monitor.ps1")
+} | Select-Object -First 1
+if (-not $existingCloud) {
+    Start-Process powershell -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$ROOT\scripts\start-cloud-monitor.ps1`"" -WindowStyle Minimized | Out-Null
+}
 
 Write-Host "KonstanceAI launcher started: supervisor, worker, and cloud monitor."

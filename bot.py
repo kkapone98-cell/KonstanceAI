@@ -109,7 +109,7 @@ def main() -> int:
         if app.bot_data.get("telegram_conflict"):
             return 11
     except Conflict:
-        log.error("Telegram polling conflict detected. Another getUpdates consumer is active.")
+        log.info("Telegram polling conflict detected. Another getUpdates consumer is active.")
         return 11
     finally:
         lock_handle.close()
