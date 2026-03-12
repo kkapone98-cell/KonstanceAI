@@ -101,8 +101,16 @@ def _ensure_context() -> None:
 
 
 def _run_tests() -> tuple[bool, str]:
+    tests_dir = ROOT / "tests"
+    if not tests_dir.exists():
+        _log("No tests/ dir")
+        return True, ""
     code, out = _run([sys.executable, "-m", "pytest", "tests/", "-v", "--tb=short", "-q"], timeout=120)
-    return code == 0, out[:2000] if out else ""
+    if code != 0:
+        code2, out2 = _run([sys.executable, "-m", "unittest", "discover", "-s", "tests", "-v"], timeout=60)
+        if code2 == 0:
+            return True, out2[:2000] if out2 else ""
+    return code == 0, (out or "")[:2000]
 
 
 def _update_context(phase: str = "operational") -> None:

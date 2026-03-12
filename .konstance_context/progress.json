@@ -1,8 +1,9 @@
 {
   "phase": "operational",
-  "last_build_ts": 1773357403,
+  "last_build_ts": 1773357511,
   "last_build_summary": "",
   "steps_completed": [
+    "build_complete",
     "build_complete"
   ],
   "current_goal": "KonstanceAI build complete, bot running, persistent context active"
