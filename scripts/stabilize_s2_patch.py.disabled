@@ -1,0 +1,58 @@
+﻿from pathlib import Path
+import shutil, time
+
+ROOT = Path(r"C:\Users\Thinkpad\Desktop\KonstanceAI")
+BOT = ROOT / "bot.py"
+BACKUP = ROOT / "backups" / f"bot_pre_s2_{int(time.time())}.py"
+
+src = BOT.read_text(encoding="utf-8", errors="ignore")
+shutil.copyfile(BOT, BACKUP)
+changed = False
+
+helper = '''
+
+def _chunk_text(text: str, limit: int = 3500):
+    t = text or ""
+    if len(t) <= limit:
+        return [t]
+    out = []
+    while t:
+        if len(t) <= limit:
+            out.append(t)
+            break
+        cut = t.rfind("\\n", 0, limit)
+        if cut <= 0:
+            cut = limit
+        out.append(t[:cut])
+        t = t[cut:].lstrip("\\n")
+    return out
+
+
+async def safe_reply(update: Update, text: str):
+    for part in _chunk_text(text, 3500):
+        await update.message.reply_text(part)
+'''
+
+if "def _chunk_text(" not in src:
+    anchor = "def style(text, prefs):"
+    idx = src.find(anchor)
+    if idx != -1:
+        src = src[:idx] + helper + "\n" + src[idx:]
+        changed = True
+
+# Replace a few common long-output replies only
+repls = [
+    ("await update.message.reply_text(msg)", "await safe_reply(update, msg)"),
+    ("await update.message.reply_text(msg if msg else \"No scripts yet.\")", "await safe_reply(update, msg if msg else \"No scripts yet.\")"),
+    ("await update.message.reply_text(msg if msg else \"No agents yet.\")", "await safe_reply(update, msg if msg else \"No agents yet.\")")
+]
+for old, new in repls:
+    if old in src:
+        src = src.replace(old, new)
+        changed = True
+
+if changed:
+    BOT.write_text(src, encoding="utf-8")
+    print(f"patched bot.py; backup={BACKUP}")
+else:
+    print("no safe patch points found; bot.py unchanged")

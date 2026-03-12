@@ -1,0 +1,31 @@
+{
+  "scripts": [
+    {
+      "name": "hello",
+      "file": "C:\\Users\\Thinkpad\\Desktop\\KonstanceAI\\scripts\\generated\\hello.py",
+      "purpose": "Print greeting",
+      "created_at": 1773266185,
+      "last_run_at": 1773266286,
+      "runs": 2,
+      "enabled": true
+    },
+    {
+      "name": "helloj",
+      "file": "C:\\Users\\Thinkpad\\Desktop\\KonstanceAI\\scripts\\generated\\helloj.py",
+      "purpose": "hello from phase j",
+      "created_at": 1773266862,
+      "last_run_at": null,
+      "runs": 0,
+      "enabled": true
+    },
+    {
+      "name": "testscript",
+      "file": "C:\\Users\\Thinkpad\\Desktop\\KonstanceAI\\scripts\\generated\\testscript.py",
+      "purpose": "print test",
+      "created_at": 1773267038,
+      "last_run_at": 1773267043,
+      "runs": 1,
+      "enabled": true
+    }
+  ]
+}

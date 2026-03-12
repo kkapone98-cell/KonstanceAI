@@ -1,0 +1,14 @@
+{
+  "id": "proposal_1773271142",
+  "goal": "improve title quality and pricing logic",
+  "created_at": 1773271142,
+  "targets": [],
+  "changes": [
+    "replace TODO scaffold body with concrete logic",
+    "add validation for input arguments",
+    "append structured logging to logs/module-name.log",
+    "return deterministic JSON output for downstream jobs"
+  ],
+  "risk": "low",
+  "status": "proposed"
+}

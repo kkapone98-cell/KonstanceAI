@@ -1,0 +1,6 @@
+﻿{
+  "chat": "local_fast",
+  "code_patch": "cloud_strong",
+  "strategy": "cloud_strong",
+  "fallback": "local_safe"
+}

@@ -1,0 +1,100 @@
+{"ts": 1773264778, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773264797, "event": "start_cmd", "user_id": "8158300788", "detail": ""}
+{"ts": 1773265470, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773265613, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773265872, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773266165, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773266447, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773266598, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773266768, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773266948, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773266950, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773266960, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773266961, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773267163, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773267163, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773267370, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773267371, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773267740, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773267760, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773268299, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773268692, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773268846, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773268941, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773269006, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773269126, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773269149, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773269264, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773269311, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773269342, "event": "error", "user_id": "8158300788", "detail": "name 'llm_reply' is not defined"}
+{"ts": 1773269766, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773269774, "event": "error", "user_id": "8158300788", "detail": "name 'llm_reply' is not defined"}
+{"ts": 1773270007, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773271348, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773271373, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773271412, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773271446, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773271483, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773271486, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773271516, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773271519, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773271688, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773271699, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773271880, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773271880, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773271973, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773272823, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773272944, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773273063, "event": "error", "user_id": "8158300788", "detail": "name 'llm_reply' is not defined"}
+{"ts": 1773273070, "event": "error", "user_id": "8158300788", "detail": "name 'llm_reply' is not defined"}
+{"ts": 1773273841, "event": "error", "user_id": "8158300788", "detail": "name 'llm_reply' is not defined"}
+{"ts": 1773273986, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773274155, "event": "error", "user_id": "8158300788", "detail": "name 'llm_reply' is not defined"}
+{"ts": 1773274238, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773274301, "event": "error", "user_id": "8158300788", "detail": "name 'llm_reply' is not defined"}
+{"ts": 1773274355, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773274361, "event": "error", "user_id": "8158300788", "detail": "name 'llm_reply' is not defined"}
+{"ts": 1773274460, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773274515, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773274574, "event": "error", "user_id": "8158300788", "detail": "name 'llm_reply' is not defined"}
+{"ts": 1773274623, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773274654, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773274717, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773274908, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773275136, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773275238, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773275356, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773275407, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773276846, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773276983, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773277035, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773277085, "event": "error", "user_id": "8158300788", "detail": "name 'llm_reply' is not defined"}
+{"ts": 1773277101, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773277165, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773277178, "event": "error", "user_id": "8158300788", "detail": "name 'llm_reply' is not defined"}
+{"ts": 1773277233, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773277376, "event": "error", "user_id": "8158300788", "detail": "name 'llm_reply' is not defined"}
+{"ts": 1773277451, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773277645, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773277786, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773277792, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773277798, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773277958, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773278153, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773278211, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773278720, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773283899, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773284246, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773284310, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773284793, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773284984, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773287260, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773287410, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773290109, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773291474, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773296140, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773296157, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773296328, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773296711, "event": "bot_start", "user_id": "", "detail": ""}
+{"ts": 1773301745, "event": "start_cmd", "user_id": "8117558345", "detail": ""}
+{"ts": 1773310089, "event": "deny:approve_latest", "user_id": "8117558345", "detail": ""}

@@ -1,0 +1,5 @@
+﻿{
+"primary": "kimi-k2.5:cloud",
+"fallback": "qwen2.5:3b",
+"timeout_sec": 120
+}

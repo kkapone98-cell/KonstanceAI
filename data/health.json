@@ -1,0 +1,9 @@
+{
+  "last_start": 1773312274,
+  "last_message": 1773311502,
+  "llm_ok": false,
+  "cloud_ok": false,
+  "errors": 7,
+  "relay_available": false,
+  "ollama_available": true
+}

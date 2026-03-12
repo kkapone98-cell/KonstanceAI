@@ -1,0 +1,13 @@
+{
+  "agents": [
+    {
+      "name": "scout",
+      "purpose": "research quick lead channels",
+      "model": "qwen2.5:3b",
+      "created_at": 1773265640,
+      "last_run_at": 1773265744,
+      "runs": 1,
+      "enabled": true
+    }
+  ]
+}
