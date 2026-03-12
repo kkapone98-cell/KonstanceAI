@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import os
+from pathlib import Path
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib import request as urllib_request
 from urllib.error import URLError
@@ -36,12 +37,14 @@ def _relay_token() -> str:
 
 
 def _local_model() -> str:
-    return (
-        os.getenv("LOCAL_LLM_MODEL")
+    # Prefer full tag (e.g. qwen2.5:7b) so Ollama loads the exact model
+    model = (
+        os.getenv("OLLAMA_MODEL")
         or os.getenv("OPENCLAW_OLLAMA_MODEL")
-        or os.getenv("OLLAMA_MODEL")
+        or os.getenv("LOCAL_LLM_MODEL")
         or "qwen2.5"
     ).strip()
+    return model or "qwen2.5"
 
 
 def _safe_json(data: bytes) -> dict:
@@ -53,8 +56,6 @@ def _safe_json(data: bytes) -> dict:
 
 def _ollama_generate(prompt: str, model: str, timeout_sec: int = 45) -> str:
     model = (model or "qwen2.5").strip()
-    if ":" not in model and "/" not in model:
-        model = f"{model}:3b"
     payload = {"model": model, "prompt": prompt, "stream": False}
     req = urllib_request.Request(
         "http://127.0.0.1:11434/api/generate",
@@ -169,6 +170,11 @@ class RelayHandler(BaseHTTPRequestHandler):
 
 
 def main() -> int:
+    script_dir = Path(__file__).resolve().parent
+    try:
+        os.chdir(script_dir)
+    except OSError:
+        pass
     host, port = _relay_bind()
     server = ThreadingHTTPServer((host, port), RelayHandler)
     print(f"OpenClaw relay listening on http://{host}:{port}")

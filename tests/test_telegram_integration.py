@@ -31,6 +31,10 @@ class TelegramIntegrationTests(unittest.TestCase):
                 self.assertIn("Status: running", status.text)
                 self.assertIn("Ollama available: True", status.text)
 
+                report = app.handle_user_message(MessageContext(user_id=99, text="/report", is_owner=True))
+                self.assertIn("Report - KonstanceAI", report.text)
+                self.assertIn("Launcher:", report.text)
+
                 updated = app.handle_user_message(
                     MessageContext(user_id=99, text="set verbosity to short", is_owner=True)
                 )
@@ -59,6 +63,10 @@ class TelegramIntegrationTests(unittest.TestCase):
         intent = parse_intent("/startclean")
         self.assertEqual(intent.name, "start_clean")
 
+    def test_restart_intent_matches_slash_command(self):
+        intent = parse_intent("/restart")
+        self.assertEqual(intent.name, "restart_runtime")
+
     def test_install_dependency_package_command_has_no_quotes(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
@@ -75,6 +83,14 @@ class TelegramIntegrationTests(unittest.TestCase):
                     install_dependency(config, "requests")
                     called = mock_exec.call_args[0][1]
                     self.assertEqual(called, "python -m pip install requests")
+
+    def test_fix_module_falls_through_to_plan_upgrade(self):
+        intent = parse_intent("fix the smart_reply_engine module")
+        self.assertEqual(intent.name, "plan_upgrade")
+
+    def test_install_dependencies_matches_install_intent(self):
+        intent = parse_intent("install the requests package")
+        self.assertEqual(intent.name, "install_dependency")
 
     def test_non_owner_cannot_plan_upgrade(self):
         with tempfile.TemporaryDirectory() as td:

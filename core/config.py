@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import os
 import sys
-import json
-import time
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -58,6 +56,7 @@ class AppConfig:
         (self.data_dir / "doctor").mkdir(parents=True, exist_ok=True)
         (self.data_dir / "memory").mkdir(parents=True, exist_ok=True)
         (self.data_dir / "upgrade_history").mkdir(parents=True, exist_ok=True)
+        (self.root / "openclaw").mkdir(parents=True, exist_ok=True)
 
     @property
     def has_owner(self) -> bool:
@@ -100,32 +99,5 @@ def load_config(root: str | Path | None = None) -> AppConfig:
         local_llm_model=(os.getenv("LOCAL_LLM_MODEL") or model or "qwen2.5").strip(),
     )
     config.ensure_runtime_dirs()
-    # region agent log
-    try:
-        with (project_root / "debug-2cefd0.log").open("a", encoding="utf-8") as fh:
-            fh.write(
-                json.dumps(
-                    {
-                        "sessionId": "2cefd0",
-                        "runId": "pre-fix",
-                        "hypothesisId": "H1",
-                        "location": "core/config.py:load_config",
-                        "message": "config_loaded_relay_fields",
-                        "data": {
-                            "has_openclaw_relay_url": bool(config.openclaw_relay_url),
-                            "openclaw_relay_url": config.openclaw_relay_url,
-                            "has_openclaw_cmd": bool(config.openclaw_cmd),
-                            "has_owner": config.has_owner,
-                            "has_token": bool(config.token),
-                        },
-                        "timestamp": int(time.time() * 1000),
-                    },
-                    ensure_ascii=True,
-                )
-                + "\n"
-            )
-    except Exception:
-        pass
-    # endregion
     return config
 

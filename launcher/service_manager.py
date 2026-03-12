@@ -139,20 +139,28 @@ def ensure_openclaw(config: AppConfig) -> None:
     if not config.openclaw_cmd or available:
         return
     flags = CREATE_NO_WINDOW if sys.platform == "win32" else 0
-    cwd = Path(config.openclaw_cwd or config.root)
+    cwd = Path(config.openclaw_cwd).resolve() if config.openclaw_cwd else (Path(config.root) / "openclaw").resolve()
     if not cwd.is_absolute():
-        cwd = (config.root / cwd).resolve()
+        cwd = (Path(config.root) / cwd).resolve()
     try:
         if not cwd.exists():
             cwd.mkdir(parents=True, exist_ok=True)
         if not cwd.is_dir():
-            cwd = config.root
+            cwd = (Path(config.root) / "openclaw").resolve()
+            cwd.mkdir(parents=True, exist_ok=True)
     except OSError:
-        cwd = config.root
+        cwd = (Path(config.root) / "openclaw").resolve()
+        try:
+            cwd.mkdir(parents=True, exist_ok=True)
+        except OSError:
+            cwd = Path(config.root).resolve()
+    cwd_str = str(cwd)
+    print(f"[launcher] ensure_openclaw: cwd={cwd_str}")
+    print(f"[launcher] ensure_openclaw: cmd={config.openclaw_cmd}")
     try:
         subprocess.Popen(
             config.openclaw_cmd,
-            cwd=str(cwd),
+            cwd=cwd_str,
             env=os.environ.copy(),
             creationflags=flags,
             shell=True,
@@ -232,17 +240,32 @@ def run_supervisor(config: AppConfig, entrypoint: Path) -> int:
     state = RuntimeState(config)
     state.ensure()
 
+    root = Path(config.root).resolve()
+    root_str = str(root)
+    entrypoint_resolved = Path(entrypoint).resolve()
+    if not entrypoint_resolved.exists():
+        print(f"ERROR: Bot entrypoint missing: {entrypoint_resolved}")
+        return 1
+
+    print(f"[launcher] run_supervisor: root={root_str}")
+    print(f"[launcher] run_supervisor: entrypoint={entrypoint_resolved}")
+    print(f"[launcher] run_supervisor: python={config.python_executable}")
+
     if not ensure_ollama(config):
         print("ERROR: Ollama is not available.")
         return 1
 
     ensure_openclaw(config)
+
     restart_count = 0
-    if not entrypoint.exists():
-        print(f"ERROR: Bot entrypoint missing: {entrypoint}")
-        return 1
+    env = os.environ.copy()
+    env["KONSTANCE_ROOT"] = root_str
     while True:
-        proc = subprocess.Popen([config.python_executable, str(entrypoint)], cwd=str(config.root), env=os.environ.copy())
+        proc = subprocess.Popen(
+            [config.python_executable, str(entrypoint_resolved)],
+            cwd=root_str,
+            env=env,
+        )
         code = proc.wait()
 
         if code == 0:

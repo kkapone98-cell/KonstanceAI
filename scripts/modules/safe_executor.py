@@ -46,12 +46,12 @@ def _parse_cmd(raw: str) -> list[str]:
 def _normalize(raw: str) -> str:
     text = (raw or "").strip()
     prefixes = (
-        "run ",
+        "run command ",
+        "please run ",
         "execute ",
         "command ",
         "/run ",
-        "please run ",
-        "run command ",
+        "run ",
     )
     lowered = text.lower()
     for prefix in prefixes:

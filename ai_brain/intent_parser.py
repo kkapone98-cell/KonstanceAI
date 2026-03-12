@@ -19,6 +19,8 @@ def parse_intent(text: str) -> IntentResult:
 
     if re.search(r"^/(start|help)$", lower):
         return IntentResult(name="help")
+    if re.search(r"^/(report)\b", lower) or re.search(r"\b(report|system snapshot|full status)\b", lower):
+        return IntentResult(name="report", requires_owner=False)
     if re.search(r"^/(status|health)\b", lower) or re.search(r"\b(status|health|alive|running)\b", lower):
         return IntentResult(name="status", requires_owner=False)
     if re.search(r"^/(drafts)\b", lower) or "show drafts" in lower or "pending drafts" in lower:
@@ -44,13 +46,13 @@ def parse_intent(text: str) -> IntentResult:
     if re.search(r"^/run\b", lower) or re.search(r"\b(run|execute)\b.*\b(command|script)\b", lower):
         cmd = re.sub(r"^/run\s*", "", raw, flags=re.IGNORECASE).strip()
         return IntentResult(name="run_local_command", requires_owner=True, entities={"command": cmd})
-    if re.search(r"\b(install|upgrade|fix)\b.*\b(dependenc|package|module|pip)\b", lower):
+    if re.search(r"\binstall\b.*\b(dependenc|package|module|pip)\b", lower):
         pkg_match = re.search(r"\b([A-Za-z0-9_.\-]+)\b(?:\s*)$", raw)
         package = pkg_match.group(1) if pkg_match and pkg_match.group(1).lower() not in {"dependencies", "dependency"} else None
         return IntentResult(name="install_dependency", requires_owner=True, entities={"package": package})
     if re.search(r"^/startclean\b", lower) or re.search(r"\b(startclean|start clean|start-clean|safe start)\b", lower):
         return IntentResult(name="start_clean", requires_owner=True)
-    if re.search(r"\brestart\b.*\b(bot|launcher|konstance)\b", lower):
+    if re.search(r"^/restart\b", lower) or re.search(r"\brestart\b.*\b(bot|launcher|konstance)\b", lower):
         return IntentResult(name="restart_runtime", requires_owner=True)
     if re.search(r"\btest\b.*\bself[- ]?upgrade\b", lower):
         return IntentResult(name="self_upgrade_test", requires_owner=True)

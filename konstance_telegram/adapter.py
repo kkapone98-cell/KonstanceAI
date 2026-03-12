@@ -15,6 +15,7 @@ def build_application(config: AppConfig) -> Application:
     app.bot_data["konstance_app"] = service
     app.add_handler(CommandHandler("start", handle_start))
     app.add_handler(CommandHandler("help", handle_message))
+    app.add_handler(CommandHandler("report", handle_message))
     app.add_handler(CommandHandler("status", handle_message))
     app.add_handler(CommandHandler("health", handle_message))
     app.add_handler(CommandHandler("drafts", handle_message))

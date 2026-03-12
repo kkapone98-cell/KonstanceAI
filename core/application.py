@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import time
-import json
 
 from ai_brain.assistant_service import generate_reply
 from ai_brain.code_analysis_agent import summarize_system
@@ -50,32 +49,6 @@ class KonstanceApplication:
                 relay_detail = (
                     "Relay unavailable. OPENCLAW_CMD is not configured, so launcher cannot auto-start OpenClaw."
                 )
-        # region agent log
-        try:
-            with (self.config.root / "debug-2cefd0.log").open("a", encoding="utf-8") as fh:
-                fh.write(
-                    json.dumps(
-                        {
-                            "sessionId": "2cefd0",
-                            "runId": "pre-fix",
-                            "hypothesisId": "H4",
-                            "location": "core/application.py:_status_text",
-                            "message": "status_health_snapshot",
-                            "data": {
-                                "relay_available": health.get("relay_available"),
-                                "ollama_available": health.get("ollama_available"),
-                                "restart_count": health.get("restart_count", 0),
-                                "relay_detail": relay_detail,
-                            },
-                            "timestamp": int(time.time() * 1000),
-                        },
-                        ensure_ascii=True,
-                    )
-                    + "\n"
-                )
-        except Exception:
-            pass
-        # endregion
         return "\n".join(
             [
                 "Status: running",
@@ -88,6 +61,32 @@ class KonstanceApplication:
                 summarize_upgrade_history(self.state),
             ]
         )
+
+    def _report_text(self) -> str:
+        """Full system snapshot: launcher path, OpenClaw health, LLM, self-upgrade status, errors."""
+        root = str(self.config.root)
+        launcher_path = str(self.config.root / "launcher.py")
+        health = self.state.update_health(
+            relay_available=relay_available(),
+            ollama_available=ollama_fallback_available(),
+            last_message=int(time.time()),
+        )
+        relay_ok = health.get("relay_available", False)
+        ollama_ok = health.get("ollama_available", False)
+        relay_url = self.config.openclaw_relay_url or "ws://127.0.0.1:18789"
+        relay_http = relay_url.replace("ws://", "http://").replace("wss://", "https://").rstrip("/")
+        lines = [
+            "Report - KonstanceAI",
+            f"Launcher: {launcher_path}",
+            f"Root: {root}",
+            f"OpenClaw relay: {relay_http}/health",
+            f"Relay available: {relay_ok}",
+            f"Local LLM (Ollama): {ollama_ok}",
+            f"Local model: {self.config.local_llm_model}",
+            f"Restart count: {health.get('restart_count', 0)}",
+            summarize_upgrade_history(self.state),
+        ]
+        return "\n".join(lines)
 
     def _failure_response(self, text: str) -> MessageResponse:
         return MessageResponse(
@@ -107,6 +106,8 @@ class KonstanceApplication:
         self.state.update_health(last_message=int(time.time()))
 
         if workflow == "operations":
+            if intent.name == "report":
+                return MessageResponse(text=self._report_text())
             if intent.name == "status":
                 return MessageResponse(text=self._status_text())
             if intent.name == "show_drafts":
@@ -184,8 +185,8 @@ class KonstanceApplication:
         if intent.name == "help":
             return MessageResponse(
                 text=(
-                    "Konstance can chat, report status, run doctor diagnostics, list drafts, "
-                    "plan safe upgrades, approve validated drafts, roll back the last promotion, "
+                    "Konstance can chat, /report (full system snapshot), /status, run doctor diagnostics, "
+                    "list drafts, plan safe upgrades, approve validated drafts, roll back the last promotion, "
                     "run owner-safe local commands, and install dependencies."
                 )
             )

@@ -50,6 +50,9 @@ def _read_llm_cfg() -> Dict[str, Any]:
 
 
 def _fallback_model() -> str:
+    env_model = (os.getenv("OLLAMA_MODEL") or "").strip()
+    if env_model and not env_model.endswith(":cloud"):
+        return env_model
     cfg = _read_llm_cfg()
     model = (cfg.get("fallback") or cfg.get("primary") or "qwen2.5:3b").strip()
     if model.endswith(":cloud"):
