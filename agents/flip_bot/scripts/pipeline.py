@@ -1,4 +1,4 @@
-mport subprocess, pathlib
+import subprocess, pathlib
 
 ROOT = pathlib.Path(r"C:\Users\Thinkpad\Desktop\KonstanceAI\agents\flip_bot")
 S = ROOT / "scripts"

@@ -1,4 +1,4 @@
-mport json, pathlib
+import json, pathlib
 
 ROOT = pathlib.Path(r"C:\Users\Thinkpad\Desktop\KonstanceAI\agents\flip_bot")
 NORM = ROOT / "data" / "leads_normalized.json"

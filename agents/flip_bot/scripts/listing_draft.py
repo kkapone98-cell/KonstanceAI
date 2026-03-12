@@ -1,4 +1,4 @@
-mport json, pathlib, argparse
+import json, pathlib, argparse
 
 ROOT = pathlib.Path(r"C:\Users\Thinkpad\Desktop\KonstanceAI\agents\flip_bot")
 SCORED = ROOT / "data" / "leads_scored.json"

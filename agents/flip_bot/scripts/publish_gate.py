@@ -1,4 +1,4 @@
-mport json, pathlib, time, argparse
+import json, pathlib, time, argparse
 
 ROOT = pathlib.Path(r"C:\Users\Thinkpad\Desktop\KonstanceAI\agents\flip_bot")
 DRAFTS = ROOT / "output" / "listing_drafts.json"

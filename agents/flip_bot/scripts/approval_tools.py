@@ -1,4 +1,4 @@
-mport json, pathlib
+import json, pathlib
 
 ROOT = pathlib.Path(r"C:\Users\Thinkpad\Desktop\KonstanceAI\agents\flip_bot")
 QUEUE = ROOT / "data" / "publish_queue.json"
