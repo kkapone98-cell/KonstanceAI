@@ -79,7 +79,7 @@ echo 3. Copy the token (looks like: 123456789:ABCdefGHIjklMNOpqrsTUVwxyz)
 
 :: Create desktop shortcut for launcher
 echo [6/6] Creating desktop shortcut...
-powershell -Command "$WshShell = New-Object -ComObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut('%USERPROFILE%\Desktop\KonstanceAI.lnk'); $Shortcut.TargetPath = '%INSTALL_DIR%\launcher.py'; $Shortcut.WorkingDirectory = '%INSTALL_DIR%'; $Shortcut.IconLocation = '%SystemRoot%\System32\SHELL32.dll,149'; $Shortcut.Save()"
+powershell -Command "$WshShell = New-Object -ComObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut('%USERPROFILE%\Desktop\KonstanceAI.lnk'); $Shortcut.TargetPath = '%INSTALL_DIR%\start_konstance.bat'; $Shortcut.WorkingDirectory = '%INSTALL_DIR%'; $Shortcut.IconLocation = '%SystemRoot%\System32\SHELL32.dll,149'; $Shortcut.Save()"
 
 echo.
 echo ============================================
@@ -90,7 +90,7 @@ echo Location: %INSTALL_DIR%
 echo.
 echo To start your bot:
 echo   - Double-click KonstanceAI.lnk on your desktop
-echo   - OR run: python "%INSTALL_DIR%\launcher.py"
+echo   - OR run: "%INSTALL_DIR%\start_konstance.bat"
 echo.
 echo To edit settings:
 echo   - Open: %INSTALL_DIR%\.env

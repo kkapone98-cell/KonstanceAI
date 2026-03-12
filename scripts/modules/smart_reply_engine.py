@@ -150,9 +150,17 @@ def smart_reply(user_text: str, prefs: Dict[str, Any], profile: Dict[str, Any]) 
     if cloud:
         return style_text(cloud, prefs)
     try:
-        local = _ollama_generate(user_text, timeout_sec=90)
+        local = _ollama_generate(user_text, timeout_sec=60)
         if local:
             return style_text(local, prefs)
     except Exception:
-        pass
-    return style_text(f"I heard: {user_text}", prefs)
+        try:
+            local = _ollama_generate(user_text, timeout_sec=60)
+            if local:
+                return style_text(local, prefs)
+        except Exception:
+            pass
+    return style_text(
+        "LLM service unavailable. Make sure Ollama is running: ollama serve",
+        prefs,
+    )
